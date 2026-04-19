@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>eMPF QA Executive Dashboard — ET-DAO</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://unpkg.com/react-is@18.3.1/umd/react-is.production.min.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<style>
+:root{--font-sans:"Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--sidebar-w:260px;--sidebar-collapsed:64px}
+[data-theme="light"]{--bg-primary:#fff;--bg-secondary:#f8f9fb;--bg-card:#fff;--text-primary:#0b1726;--text-secondary:#5b6777;--text-muted:#8b95a5;--accent-primary:#0c5c87;--accent-secondary:#1a7ab8;--accent-success:#2e7d32;--accent-warning:#c46b1c;--accent-danger:#c62828;--border:#e6ecf3;--shadow:rgba(10,25,41,.08);--callout-bg:#f0f7fb;--callout-border:#0c5c87;--callout-text:#0b1726;--sidebar-bg:#f3f6fa;--sidebar-hover:#e8edf4}
+[data-theme="dark"]{--bg-primary:#0d1117;--bg-secondary:#161b22;--bg-card:#1c2128;--text-primary:#e6edf3;--text-secondary:#8b949e;--text-muted:#6e7681;--accent-primary:#58a6d4;--accent-secondary:#79c0e8;--accent-success:#3fb950;--accent-warning:#d29922;--accent-danger:#f85149;--border:#30363d;--shadow:rgba(0,0,0,.3);--callout-bg:#1e3a4f;--callout-border:#58a6d4;--callout-text:#e6edf3;--sidebar-bg:#161b22;--sidebar-hover:#1c2128}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);font-size:14px;transition:background .3s,color .3s}
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s;overflow:hidden;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar.collapsed{width:var(--sidebar-collapsed)}
+.sidebar-header{padding:var(--space-md);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);min-height:64px}
+.sidebar-header .logo{height:32px;transition:opacity .3s}
+.sidebar.collapsed .logo{opacity:0;width:0}
+.sidebar-toggle{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:var(--radius-sm)}
+.sidebar-toggle:hover{background:var(--sidebar-hover)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:var(--space-sm) 0}
+.nav-group-label{padding:12px var(--space-md) 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.nav-group-label .caret{font-size:9px;transition:transform .2s}
+.nav-group-label.collapsed .caret{transform:rotate(-90deg)}
+.nav-group-items{transition:max-height .25s ease;overflow:hidden}
+.nav-group-items.collapsed{max-height:0!important}
+.sidebar.collapsed .nav-group-label{display:none}
+.biz-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);box-shadow:0 4px 16px var(--shadow);position:relative;overflow:hidden}
+.biz-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent-primary)}
+.biz-kpi.green::before{background:var(--accent-success)}
+.biz-kpi.amber::before{background:var(--accent-warning)}
+.biz-kpi.red::before{background:var(--accent-danger)}
+.biz-kpi .v{font-size:24px;font-weight:700;color:var(--text-primary);line-height:1.1}
+.biz-kpi .l{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-top:6px}
+.biz-kpi .s{font-size:11px;color:var(--text-muted);margin-top:4px}
+.biz-kpi .delta{font-size:11px;font-weight:600;margin-top:2px;display:inline-block}
+.heatmap-row{display:grid;grid-template-columns:140px 1fr 50px;gap:8px;align-items:center;font-size:12px;padding:4px 0}
+.heatmap-cell{height:18px;border-radius:3px}
+.lifecycle-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--bg-secondary);font-size:11px;font-weight:600}
+.lifecycle-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-primary)}
+/* === MBB-style Lifecycle Chevron Flow === */
+.lc-banner{display:flex;align-items:center;gap:32px;padding:22px 28px;background:linear-gradient(135deg,#0b1726 0%,#0c5c87 100%);color:#fff;border-radius:var(--radius-md);margin-bottom:20px;position:relative;overflow:hidden}
+[data-theme="dark"] .lc-banner{background:linear-gradient(135deg,#1c2128 0%,#1a7ab8 100%)}
+.lc-banner::after{content:'';position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04)}
+.lc-banner .num{font-size:44px;font-weight:300;line-height:1;letter-spacing:-1.5px;font-feature-settings:'tnum' 1}
+.lc-banner .unit{font-size:18px;opacity:.65;font-weight:400;margin-left:2px}
+.lc-banner .sub{font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;opacity:.8;font-weight:500;margin-top:4px}
+.lc-banner .desc{flex:1;font-size:13px;line-height:1.55;opacity:.9;max-width:480px}
+.lc-banner .pill-row{display:flex;gap:6px}
+.lc-banner .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.1);border-radius:4px;font-size:11px;font-weight:600;font-feature-settings:'tnum' 1}
+.lc-banner .pill .d{width:8px;height:8px;border-radius:50%}
+
+.lc-flow{display:flex;align-items:stretch;gap:0;padding:50px 4px 30px;overflow-x:auto;overflow-y:visible}
+.lc-chev{position:relative;min-width:125px;flex:1;height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 16px 0 26px;transition:all .2s ease;cursor:help;border:none}
+.lc-chev:first-child{padding-left:18px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)}
+.lc-chev:last-child{padding-right:18px;clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%)}
+.lc-chev:not(:first-child):not(:last-child){clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)}
+.lc-chev:not(:first-child){margin-left:-12px}
+.lc-chev:hover{transform:translateY(-2px);z-index:5;filter:brightness(1.08)}
+.lc-chev .ic{font-size:15px;opacity:.85;line-height:1;margin-bottom:3px}
+.lc-chev .lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:center;line-height:1.1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+.lc-chev .sc{font-size:18px;font-weight:700;color:#fff;margin-top:3px;line-height:1;font-feature-settings:'tnum' 1}
+/* MBB palette: muted, professional */
+.lc-chev.green{background:#2c7a4d}
+.lc-chev.amber{background:#b8761d}
+.lc-chev.red{background:#b5352f}
+[data-theme="dark"] .lc-chev.green{background:#3a8560}
+[data-theme="dark"] .lc-chev.amber{background:#c28333}
+[data-theme="dark"] .lc-chev.red{background:#c74238}
+
+/* Tooltip — MBB clean info card */
+.lc-tooltip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);min-width:260px;max-width:320px;background:#fff;color:#0b1726;border:1px solid #e6ecf3;border-radius:8px;padding:14px 16px;box-shadow:0 12px 32px rgba(11,23,38,.18),0 2px 8px rgba(11,23,38,.08);opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:100;font-size:12px}
+[data-theme="dark"] .lc-tooltip{background:#1c2128;color:#e6edf3;border-color:#30363d;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.lc-chev:hover .lc-tooltip{opacity:1}
+.lc-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#fff}
+[data-theme="dark"] .lc-tooltip::after{border-top-color:#1c2128}
+.lc-tt-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border)}
+.lc-tt-head .tag{width:8px;height:8px;border-radius:50%}
+.lc-tt-head .name{font-size:13px;font-weight:700;letter-spacing:.3px;flex:1}
+.lc-tt-head .status{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:2px 8px;border-radius:3px}
+.lc-tt-head .status.green{background:rgba(44,122,77,.12);color:#2c7a4d}
+.lc-tt-head .status.amber{background:rgba(184,118,29,.12);color:#b8761d}
+.lc-tt-head .status.red{background:rgba(181,53,47,.12);color:#b5352f}
+.lc-tt-metric{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:6px}
+.lc-tt-nums{display:flex;gap:20px;margin-bottom:10px}
+.lc-tt-nums .blk{flex:1}
+.lc-tt-nums .v{font-size:22px;font-weight:700;color:var(--text-primary);line-height:1;font-feature-settings:'tnum' 1}
+.lc-tt-nums .l{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;font-weight:500}
+.lc-tt-nums .v.tgt{color:var(--text-secondary);font-weight:500}
+.lc-tt-gap{display:inline-block;padding:3px 8px;border-radius:3px;font-size:11px;font-weight:700;font-feature-settings:'tnum' 1}
+.lc-tt-gap.pos{background:rgba(44,122,77,.12);color:#2c7a4d}
+.lc-tt-gap.neg{background:rgba(181,53,47,.12);color:#b5352f}
+.lc-tt-detail{font-size:11.5px;color:var(--text-secondary);line-height:1.55;padding-top:10px;border-top:1px solid var(--border);margin-top:2px}
+
+.lc-progress{height:3px;background:rgba(255,255,255,.22);border-radius:2px;margin-top:6px;overflow:hidden;width:60%}
+.lc-progress .f{height:100%;background:#fff;border-radius:2px;transition:width .6s ease}
+
+.lc-legend{display:flex;align-items:center;gap:20px;font-size:11px;color:var(--text-secondary);margin-top:12px;flex-wrap:wrap;padding:0 4px}
+.lc-legend .sw{width:12px;height:3px;border-radius:1px;display:inline-block;margin-right:6px;vertical-align:middle}
+.lc-legend .note{margin-left:auto;font-style:italic;color:var(--text-muted);font-size:10.5px}
+.sidebar.collapsed .nav-group-label{display:none}
+.nav-item{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);cursor:pointer;color:var(--text-secondary);transition:all .2s;border-left:3px solid transparent;white-space:nowrap;font-size:13px}
+.nav-item:hover{background:var(--sidebar-hover);color:var(--text-primary)}
+.nav-item.active{color:var(--accent-primary);border-left-color:var(--accent-primary);background:var(--sidebar-hover);font-weight:600}
+.nav-item .icon{font-size:18px;min-width:24px;text-align:center}
+.sidebar.collapsed .nav-item .label{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding-left:0;padding-right:0}
+.main{flex:1;margin-left:var(--sidebar-w);transition:margin-left .3s;min-width:0}
+.sidebar.collapsed~.main{margin-left:var(--sidebar-collapsed)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border);background:var(--bg-primary);position:sticky;top:0;z-index:50}
+.topbar .brand{font-size:18px;font-weight:700;color:var(--accent-primary)}
+.theme-toggle{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--bg-secondary);cursor:pointer;font-size:18px}
+.content{padding:var(--space-lg);max-width:1400px;margin:0 auto}
+.section-title{font-size:22px;font-weight:600;margin-bottom:var(--space-lg);padding-bottom:var(--space-sm);border-bottom:2px solid var(--accent-primary);display:inline-block}
+.subsection{margin-top:var(--space-xl)}
+.subsection h3{font-size:16px;font-weight:600;margin-bottom:var(--space-md)}
+.grid{display:grid;gap:var(--space-md)}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-md);box-shadow:0 4px 16px var(--shadow);transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.card h3{font-size:14px;font-weight:600;margin-bottom:var(--space-md);color:var(--text-primary)}
+.kpi-card{text-align:center;padding:var(--space-lg)}
+.kpi-value{font-size:28px;font-weight:700;color:var(--accent-primary)}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg-secondary);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-secondary);border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0;z-index:1}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--bg-secondary)}
+.rag{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.rag-green{background:var(--accent-success)}.rag-amber{background:var(--accent-warning)}.rag-red{background:var(--accent-danger)}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(46,125,50,.12);color:var(--accent-success)}
+.badge-amber{background:rgba(196,107,28,.12);color:var(--accent-warning)}
+.badge-red{background:rgba(198,40,40,.12);color:var(--accent-danger)}
+.badge-blue{background:rgba(26,122,184,.12);color:var(--accent-secondary)}
+.badge-gray{background:rgba(91,103,119,.12);color:var(--text-secondary)}
+.progress-bar{height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.callout{background:var(--callout-bg);border:2px solid var(--callout-border);border-radius:var(--radius-md);padding:var(--space-lg);color:var(--callout-text);margin-top:var(--space-lg)}
+.callout h3{margin-bottom:var(--space-sm);font-size:15px}
+.tbl-wrap{max-height:600px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-primary);font-size:13px;min-width:130px}
+.pagination{display:flex;gap:6px;justify-content:center;margin-top:12px;align-items:center;font-size:13px}
+.pagination button{padding:6px 10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer}
+.pagination button:disabled{opacity:.4}
+.pflow{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;overflow-x:auto;margin-bottom:16px;box-shadow:0 4px 16px var(--shadow)}
+.pflow-phases{display:flex;align-items:center;margin-bottom:16px;min-width:900px}
+.phase{display:flex;flex-direction:column;align-items:center;flex:1}
+.phase-circle{width:50px;height:50px;border-radius:50%;border:3px solid var(--accent-success);display:flex;align-items:center;justify-content:center;background:var(--bg-card);font-size:20px}
+.phase-circle.inactive{border-color:var(--text-muted);opacity:.5}
+.phase-label{font-size:11px;color:var(--text-secondary);margin-top:6px;font-weight:500}
+.phase-arrow{flex:0 0 36px;color:var(--text-muted);font-size:18px;text-align:center}
+.pflow-cards{display:flex;min-width:900px}
+.pcard-slot{flex:1;display:flex;flex-direction:column;gap:6px}
+.pcard{background:var(--bg-card);border:1px solid var(--border);border-top:4px solid var(--accent-primary);border-radius:4px;padding:8px;font-size:11px;box-shadow:0 2px 6px var(--shadow)}
+.pcard-id{font-family:monospace;font-size:10px;color:var(--accent-primary);margin-bottom:3px}
+.pcard-title{font-weight:600;font-size:11px;margin-bottom:3px}
+.pcard-meta{font-size:10px;color:var(--text-secondary);white-space:pre-line;line-height:1.4}
+.pcard.kb{border-top-color:var(--accent-warning)}
+.arrow-slot{flex:0 0 36px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);padding-top:22px}
+.empty{color:var(--text-muted);font-size:11px;padding:6px;text-align:center;border:1px dashed var(--border);border-radius:4px}
+.kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px}
+.kcol{flex:0 0 260px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;border-top:4px solid var(--accent-primary)}
+.kcol h4{margin:0 0 10px;font-size:13px;display:flex;justify-content:space-between}
+.kcol .cnt{background:var(--accent-primary);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px}
+.kitem{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;margin-bottom:8px;font-size:12px;box-shadow:0 2px 4px var(--shadow);cursor:pointer}
+.kitem .kid{font-family:monospace;font-size:10px;color:var(--accent-primary)}
+.kitem .ktit{font-weight:600;margin:3px 0;font-size:12px}
+.sprint-sel{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.sprint-sel button{padding:6px 12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer;font-size:12px}
+.sprint-sel button.active{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
+.mod-health-row{display:grid;grid-template-columns:190px 50px 1fr 60px 55px;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--border);font-size:12px}
+.mod-health-row:hover{background:var(--bg-secondary)}
+.mod-name{font-weight:600;font-size:13px}
+.exec-hero{background:linear-gradient(135deg,#0b1726 0%,#0c5c87 100%);color:#fff;border-radius:var(--radius-md);padding:24px 28px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px}
+[data-theme="dark"] .exec-hero{background:linear-gradient(135deg,#1c2128 0%,#1a7ab8 100%)}
+.exec-hero .blk{border-left:1px solid rgba(255,255,255,.18);padding-left:18px}
+.exec-hero .blk:first-child{border-left:none;padding-left:0}
+.exec-hero .v{font-size:32px;font-weight:300;line-height:1;letter-spacing:-1px}
+.exec-hero .u{font-size:14px;opacity:.65;margin-left:2px;font-weight:400}
+.exec-hero .l{font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.8;font-weight:500;margin-top:6px}
+.exec-hero .s{font-size:11px;opacity:.78;margin-top:6px;line-height:1.4}
+.exec-hero .d{font-size:11px;font-weight:600;margin-top:4px}
+.exec-hero .d.up{color:#7ed4a3}
+.exec-hero .d.down{color:#f0a8a3}
+.mini-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;position:relative;overflow:hidden}
+.mini-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent-primary)}
+.mini-kpi.green::before{background:#2c7a4d}
+.mini-kpi.amber::before{background:#b8761d}
+.mini-kpi.red::before{background:#b5352f}
+.mini-kpi .v{font-size:22px;font-weight:700;color:var(--text-primary);line-height:1.1}
+.mini-kpi .l{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600}
+.mini-kpi .s{font-size:11px;color:var(--text-muted);margin-top:4px}
+.pledge-row{display:grid;grid-template-columns:1.3fr 90px 1fr 60px 60px;gap:14px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);font-size:12.5px}
+.pledge-row:last-child{border-bottom:none}
+.pledge-row:hover{background:var(--bg-secondary)}
+.pledge-row .pname{font-weight:600;color:var(--text-primary);font-size:13px}
+.pledge-row .psub{font-size:10.5px;color:var(--text-muted);margin-top:2px}
+.pledge-row .ptarget{color:var(--text-secondary);font-size:11px;text-align:right}
+.pledge-bar{height:10px;background:var(--bg-secondary);border-radius:5px;overflow:hidden;position:relative}
+.pledge-bar .fill{height:100%;border-radius:5px;transition:width .6s}
+.pledge-bar .target-line{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text-primary);opacity:.4}
+.pledge-row .prate{font-size:14px;font-weight:700;text-align:right}
+.pledge-row .prate.green{color:#2c7a4d}
+.pledge-row .prate.amber{color:#b8761d}
+.pledge-row .prate.red{color:#b5352f}
+.pledge-row .pvol{font-size:11px;color:var(--text-secondary);text-align:right}
+.tr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:8px}
+.tr-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.tr-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px var(--shadow)}
+.tr-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.tr-card.green::before{background:#2c7a4d}
+.tr-card.amber::before{background:#b8761d}
+.tr-card.red::before{background:#b5352f}
+.tr-card.gray::before{background:var(--text-muted)}
+.tr-card .thead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.tr-card .tname{font-size:13.5px;font-weight:700;color:var(--text-primary);line-height:1.25}
+.tr-card .tstatus{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 7px;border-radius:3px;white-space:nowrap}
+.tr-card .tstatus.green{background:rgba(44,122,77,.12);color:#2c7a4d}
+.tr-card .tstatus.amber{background:rgba(184,118,29,.12);color:#b8761d}
+.tr-card .tstatus.red{background:rgba(181,53,47,.12);color:#b5352f}
+.tr-card .tstatus.gray{background:rgba(139,149,165,.12);color:var(--text-muted)}
+.tr-card .tmeta{font-size:10.5px;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.tr-card .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:11.5px}
+.tr-card .tgrid .lbl{color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+.tr-card .tgrid .val{font-weight:600;color:var(--text-primary);margin-top:1px}
+.cmpl-row{display:grid;grid-template-columns:1.5fr 60px 1fr 60px;gap:12px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.cmpl-row:hover{background:var(--bg-secondary)}
+.cmpl-row .cname{font-weight:500}
+.cmpl-row .ccnt{text-align:right;color:var(--text-secondary)}
+.cmpl-row .cpct{text-align:right;font-weight:600}
+.cost-hero{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;display:grid;grid-template-columns:1fr 2fr;gap:24px;align-items:center;margin-bottom:16px}
+.cost-hero .num{font-size:42px;font-weight:300;color:var(--accent-primary);line-height:1;letter-spacing:-1.5px}
+.cost-hero .unit{font-size:18px;color:var(--text-secondary);margin-left:4px;font-weight:400}
+.cost-hero .lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-top:8px}
+.cost-hero .pgress{height:14px;background:var(--bg-secondary);border-radius:7px;overflow:hidden;margin-top:14px;position:relative}
+.cost-hero .pgress .fill{height:100%;background:linear-gradient(90deg,#2c7a4d,#3a8560);border-radius:7px}
+.cost-hero .marks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-muted);margin-top:6px}
+.risk-item{display:grid;grid-template-columns:30px 1fr 90px 80px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px}
+.risk-item:hover{background:var(--bg-secondary)}
+.risk-item .ric{font-size:18px;text-align:center}
+.risk-item .rtit{font-weight:600}
+.risk-item .rmeta{font-size:10.5px;color:var(--text-muted);margin-top:2px}
+.risk-item .rsev{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:center;padding:3px 6px;border-radius:3px}
+.risk-item .rsev.red{background:rgba(181,53,47,.12);color:#b5352f}
+.risk-item .rsev.amber{background:rgba(184,118,29,.12);color:#b8761d}
+.risk-item .rtrend{font-size:11px;text-align:right;font-weight:600;color:var(--text-secondary)}
+/* ===== QA Dashboard (merged from qa_dashboard.html) — utility classes ===== */
+.qa-embed .grid-5{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.qa-embed .progress-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.qa-embed .stacked-bar{display:flex;height:24px;border-radius:4px;overflow:hidden;gap:1px}
+.qa-embed .stacked-bar div{transition:width .6s ease}
+.qa-embed .timeline{display:flex;gap:2px;margin-bottom:var(--space-lg)}
+.qa-embed .timeline-phase{flex:1;padding:8px 12px;text-align:center;font-size:11px;font-weight:600;background:var(--bg-secondary);color:var(--text-muted);border-radius:var(--radius-sm);transition:all .3s}
+.qa-embed .timeline-phase.current{background:var(--accent-primary);color:#fff}
+.qa-embed .timeline-phase.done{background:var(--accent-success);color:#fff;opacity:.8}
+.qa-embed .donut-wrap{display:flex;align-items:center;gap:var(--space-lg)}
+.qa-embed .donut-legend{font-size:13px}
+.qa-embed .donut-legend div{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qa-embed .readiness-chart-card{padding:var(--space-md) var(--space-lg)}
+.qa-embed .readiness-chart-card h3{font-size:14px;font-weight:600;margin-bottom:2px}
+.qa-embed .readiness-chart-legend{display:flex;gap:20px;font-size:11px;flex-wrap:wrap}
+.qa-embed .readiness-chart-legend span{display:flex;align-items:center;gap:4px}
+.qa-embed .chart-container{position:relative;padding:var(--space-md) 0}
+.qa-embed svg text{fill:var(--text-secondary);font-family:var(--font-sans);font-size:11px}
+.qa-embed .callout h3{margin-bottom:var(--space-sm);font-size:15px}
+.qa-embed .callout ul{padding-left:20px;font-size:13px;line-height:1.8}
+.qa-embed .callout ul li{margin-bottom:4px}
+.qa-embed table{width:100%;border-collapse:collapse;font-size:13px}
+.qa-embed th{background:var(--bg-secondary);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-secondary);border-bottom:2px solid var(--border);font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+.qa-embed td{padding:10px 12px;border-bottom:1px solid var(--border);transition:background .15s}
+.qa-embed tr:hover td{background:var(--bg-secondary)}
+.qa-week-selector{display:flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) var(--space-md);background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:var(--space-md);flex-wrap:wrap}
+.qa-week-nav{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;color:var(--text-primary);font-size:14px;transition:all .2s;flex-shrink:0}
+.qa-week-nav:hover{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
+.qa-week-label{font-weight:600;font-size:13px;min-width:200px;text-align:center;flex-shrink:0}
+.qa-week-pills{display:flex;gap:4px;overflow-x:auto;flex:1;padding:2px 0;scrollbar-width:thin}
+.qa-week-pills::-webkit-scrollbar{height:4px}
+.qa-week-pills::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.qa-week-pill{padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary);transition:all .2s;white-space:nowrap;flex-shrink:0}
+.qa-week-pill.active{background:var(--accent-primary);color:#fff;border-color:var(--accent-primary)}
+.qa-week-pill:hover:not(.active){background:var(--sidebar-hover)}
+</style></head><body><div id="root"></div>
+<script>
+window.__ERRORS__=[];
+window.addEventListener('error',function(e){
+  window.__ERRORS__.push({msg:e.message||String(e),file:e.filename||'',line:e.lineno||'',col:e.colno||''});
+  // Defer rendering until DOM ready and React/Babel had time to load
+  setTimeout(function(){
+    var r=document.getElementById('root');
+    if(!r||r.innerHTML.length>50)return;
+    var libs=[
+      ['React',typeof React!=='undefined'],
+      ['ReactDOM',typeof ReactDOM!=='undefined'],
+      ['Recharts',typeof Recharts!=='undefined'],
+      ['Babel',typeof Babel!=='undefined'],
+    ];
+    var libRows=libs.map(function(l){return '<tr><td>'+l[0]+'</td><td style="color:'+(l[1]?'#2e7d32':'#c62828')+';font-weight:600">'+(l[1]?'✓ loaded':'✗ NOT loaded')+'</td></tr>';}).join('');
+    var errRows=window.__ERRORS__.map(function(er,i){return '<div style="margin:6px 0;padding:8px;background:#fee;border-left:3px solid #c62828;font-family:monospace;font-size:11px"><strong>['+i+']</strong> '+er.msg+(er.file?'<br><span style="color:#666">'+er.file+':'+er.line+':'+er.col+'</span>':'')+'</div>';}).join('');
+    r.innerHTML='<div style="padding:40px;font-family:sans-serif;max-width:900px;margin:0 auto"><h2 style="color:#c62828">Dashboard failed to start</h2><p>The dashboard could not load. Common causes:</p><ul><li><strong>No internet:</strong> the page needs CDN access (unpkg.com) on first load. Check your connection.</li><li><strong>Adblocker:</strong> some adblockers block unpkg/jsDelivr CDNs. Try disabling for this page.</li><li><strong>Corporate firewall:</strong> ask IT to whitelist unpkg.com and cdn.jsdelivr.net.</li></ul><h3 style="margin-top:24px">Library status</h3><table style="font-size:13px;border-collapse:collapse;margin-bottom:20px"><thead><tr><th style="text-align:left;padding:6px 16px 6px 0">Library</th><th style="text-align:left;padding:6px">Status</th></tr></thead><tbody>'+libRows+'</tbody></table><h3>Errors detected</h3>'+(errRows||'<em style="color:#666">No JS errors recorded</em>')+'<p style="margin-top:24px;font-size:12px;color:#666">Open browser DevTools (F12) → Console for full details. Send a screenshot to support.</p></div>';
+  },2500);
+});
+</script>
+<script>window.__DATA__=null;window.__BIZ_DATA__=null;</script><script src="data.js"></script><script src="data_biz.js"></script><script src="data_QA.js"></script>
+<script>
+/* ===== QA Dashboard render module (merged from qa_dashboard.html) =====
+   Exposes window.QA = { render(section, week, lang), WEEKS, WEEK_DATES, NAV_ITEMS }
+   Returns an HTML string for the given dev section/week. Used by <DevDashboard> below. */
+(function(){
+  if(typeof DASHBOARD_DATA==='undefined'){window.QA={render:function(){return '<div style="padding:40px;color:var(--accent-danger)">data_QA.js failed to load.</div>';},WEEKS:[],WEEK_DATES:{},NAV_ITEMS:[]};return;}
+  const D=DASHBOARD_DATA;
+  const WEEKS=['W14','W15','W16','W17','W18','W19','W20','W21','W22','W23','W24','W25','W26','W27','W28','W29','W30','W31','W32','W33'];
+  const WEEK_DATES={W14:'Feb 09, 2026',W15:'Feb 16, 2026',W16:'Feb 23, 2026',W17:'Mar 02, 2026',W18:'Mar 09, 2026',W19:'Mar 16, 2026',W20:'Mar 23, 2026',W21:'Mar 30, 2026',W22:'Apr 06, 2026',W23:'Apr 13, 2026',W24:'Apr 20, 2026',W25:'Apr 27, 2026',W26:'May 04, 2026',W27:'May 11, 2026',W28:'May 18, 2026',W29:'May 25, 2026',W30:'Jun 01, 2026',W31:'Jun 08, 2026',W32:'Jun 15, 2026',W33:'Jun 22, 2026'};
+  const NAV_ITEMS=[
+    {icon:'📊',en:'Dashboard',zh:'仪表板'},
+    {icon:'📋',en:'Functional Testing — SIT',zh:'功能测试 — SIT'},
+    {icon:'📦',en:'Data Migration',zh:'数据迁移'},
+    {icon:'⚡',en:'Performance Testing',zh:'性能测试'},
+    {icon:'🔒',en:'Security Testing',zh:'安全测试'},
+    {icon:'🔄',en:'Regression & Automation',zh:'回归与自动化'},
+    {icon:'✅',en:'UAT',zh:'用户验收测试'},
+    {icon:'🛡️',en:'DR / Business Continuity',zh:'灾难恢复/业务连续性'},
+    {icon:'📜',en:'Compliance',zh:'合规测试'},
+    {icon:'🚀',en:'Go-Live Readiness',zh:'上线就绪度'},
+    {icon:'🏦',en:'Trustee Onboarding Status',zh:'受托人入驻状态'}
+  ];
+  let currentWeek='W22',currentLang='en';
+
+  /* Helpers */
+  const T=(en,zh)=>currentLang==='en'?en:zh;
+  const ragClass=s=>s==='green'?'rag-green':s==='amber'?'rag-amber':'rag-red';
+  const badgeClass=s=>s==='green'||s==='Resolved'||s==='Pass'||s==='On Track'||s==='Signed Off'?'badge-green':s==='amber'||s==='In Progress'||s==='Conditional Pass'?'badge-amber':s==='red'||s==='Open'||s==='Fail'||s==='Not Started'?'badge-red':'badge-gray';
+  const pct=v=>(v||0).toFixed(1)+'%';
+  const ragDot=s=>`<span class="rag ${ragClass(s)}"></span>`;
+  const badge=(text,cls)=>`<span class="badge ${cls||badgeClass(text)}">${text}</span>`;
+  const progressBar=(val,color)=>`<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,val)}%;background:${color||'var(--accent-primary)'}"></div></div>`;
+  function kpiCard(value,label,sub,color){return `<div class="card kpi-card"><div class="kpi-value" style="${color?'color:'+color:''}">${value}</div><div class="kpi-label">${label}</div>${sub?'<div class="kpi-sub">'+sub+'</div>':''}</div>`;}
+  function makeTable(headers,rows){return `<div class="card" style="overflow-x:auto"><table><thead><tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>${rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`;}
+  function calloutBox(title,items){return `<div class="callout"><h3>💡 ${title}</h3><ul>${items.map(i=>'<li>'+i+'</li>').join('')}</ul></div>`;}
+  function lineChart(data,w,h,labels){
+    if(!data||!data.length)return'';
+    const pad={t:20,r:20,b:40,l:40};const cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+    const maxV=Math.max(...data.flatMap(s=>s.values))*1.1;
+    let svg=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+    for(let i=0;i<=4;i++){const y=pad.t+ch-ch*i/4;const v=Math.round(maxV*i/4);svg+=`<line x1="${pad.l}" y1="${y}" x2="${w-pad.r}" y2="${y}" stroke="var(--border)" stroke-dasharray="4"/><text x="${pad.l-5}" y="${y+4}" text-anchor="end" font-size="10">${v}</text>`}
+    if(labels)labels.forEach((l,i)=>{const x=pad.l+cw*i/(labels.length-1);if(i%2===0)svg+=`<text x="${x}" y="${h-5}" text-anchor="middle" font-size="9">${l}</text>`});
+    data.forEach(series=>{const pts=series.values.map((v,i)=>{const x=pad.l+cw*i/(series.values.length-1);const y=pad.t+ch-ch*v/maxV;return `${x},${y}`}).join(' ');svg+=`<polyline points="${pts}" fill="none" stroke="${series.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;series.values.forEach((v,i)=>{const x=pad.l+cw*i/(series.values.length-1);const y=pad.t+ch-ch*v/maxV;svg+=`<circle cx="${x}" cy="${y}" r="3" fill="${series.color}" stroke="var(--bg-card)" stroke-width="1.5"/>`})});
+    svg+=`</svg>`;return svg;
+  }
+  function renderReadinessChart(){
+    const trend=D.readinessTrend;const planned=trend.planned;const actual=trend.actual;const tgt=trend.target;
+    const W=1100,H=150;const pad={t:12,r:45,b:28,l:42};const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+    const allWeeks=planned.map(p=>p.week);const weekCount=allWeeks.length;
+    function x(i){return pad.l+cw*i/(weekCount-1)}
+    function y(v){return pad.t+ch-ch*v/100}
+    let svg=`<svg width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="overflow:visible">`;
+    for(let v=0;v<=100;v+=25)svg+=`<line x1="${pad.l}" y1="${y(v)}" x2="${W-pad.r}" y2="${y(v)}" stroke="var(--border)" stroke-dasharray="4" opacity="0.6"/><text x="${pad.l-6}" y="${y(v)+4}" text-anchor="end" font-size="9" fill="var(--text-muted)">${v}%</text>`;
+    svg+=`<line x1="${pad.l}" y1="${y(tgt)}" x2="${W-pad.r}" y2="${y(tgt)}" stroke="var(--accent-success)" stroke-dasharray="6,3" stroke-width="1.5" opacity="0.5"/><text x="${W-pad.r+4}" y="${y(tgt)+4}" font-size="8" fill="var(--accent-success)" font-weight="600">${tgt}%</text>`;
+    allWeeks.forEach((w,i)=>{const wNum=parseInt(w.slice(1));if(wNum%4===0||i===0||i===weekCount-1)svg+=`<text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="8" fill="var(--text-muted)">${w}</text>`});
+    const glIdx=allWeeks.indexOf('W48');
+    if(glIdx>=0)svg+=`<line x1="${x(glIdx)}" y1="${pad.t}" x2="${x(glIdx)}" y2="${H-pad.b}" stroke="var(--accent-danger)" stroke-dasharray="3,3" opacity="0.5" stroke-width="1.5"/><text x="${x(glIdx)}" y="${pad.t-2}" text-anchor="middle" font-size="8" fill="var(--accent-danger)" font-weight="600">Go-Live</text>`;
+    const cwi=WEEKS.indexOf(currentWeek);const actEndIdx=cwi>=0?cwi:actual.length-1;
+    if(actEndIdx>=0){let fillPts=`${x(0)},${y(0)}`;for(let i=0;i<=actEndIdx;i++)fillPts+=` ${x(i)},${y(actual[i].value)}`;fillPts+=` ${x(actEndIdx)},${y(0)}`;svg+=`<polygon points="${fillPts}" fill="var(--chart-fill,rgba(12,92,135,0.08))" opacity="0.6"/>`}
+    const plannedPts=planned.map((p,i)=>`${x(i)},${y(p.value)}`).join(' ');
+    svg+=`<polyline points="${plannedPts}" fill="none" stroke="var(--chart-planned,var(--accent-secondary))" stroke-width="2" stroke-dasharray="8,4" opacity="0.6"/>`;
+    if(actEndIdx>=0){
+      const actPts=[];for(let i=0;i<=actEndIdx;i++)actPts.push(`${x(i)},${y(actual[i].value)}`);
+      svg+=`<polyline points="${actPts.join(' ')}" fill="none" stroke="var(--chart-actual,var(--accent-primary))" stroke-width="2.5" stroke-linecap="round"/>`;
+      if(actEndIdx<weekCount-1){
+        const lastAct=actual[actEndIdx].value;const projTarget=planned[weekCount-1].value*0.95;
+        const projPts=[`${x(actEndIdx)},${y(lastAct)}`];
+        for(let i=actEndIdx+1;i<weekCount;i++){const prog=(i-actEndIdx)/(weekCount-1-actEndIdx);const projVal=lastAct+(projTarget-lastAct)*prog;projPts.push(`${x(i)},${y(projVal)}`)}
+        svg+=`<polyline points="${projPts.join(' ')}" fill="none" stroke="var(--chart-actual,var(--accent-primary))" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>`;
+      }
+      svg+=`<circle cx="${x(actEndIdx)}" cy="${y(actual[actEndIdx].value)}" r="5" fill="var(--chart-actual,var(--accent-primary))" stroke="var(--bg-card)" stroke-width="2"/>`;
+    }
+    svg+=`</svg>`;
+    return `<div class="card readiness-chart-card"><h3>${T('Readiness Trend','就绪度趋势')}</h3><div class="readiness-chart-legend"><span><svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="var(--accent-secondary)" stroke-width="2" stroke-dasharray="4,2"/></svg> ${T('Planned','计划')}</span><span><svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="var(--accent-primary)" stroke-width="2.5"/></svg> ${T('Actual','实际')}</span><span><svg width="20" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="var(--accent-success)" stroke-width="1.5" stroke-dasharray="4,2"/></svg> ${T('Target 95%','目标95%')}</span></div>${svg}</div>`;
+  }
+
+  /* Tab renderers */
+  function renderDashboard(){
+    const ps=D.projectSummary[currentWeek]||D.projectSummary.W22;
+    const dh=D.domainHealth[currentWeek]||[];
+    const df=D.defectTrend14d[currentWeek]||[];
+    const kr=D.keyRisksActions[currentWeek];
+    const weekNum=ps.weekNumber;
+    const prevWeek=WEEKS[Math.max(0,WEEKS.indexOf(currentWeek)-1)];
+    const prevPs=D.projectSummary[prevWeek];
+    const progressDelta=prevPs?Math.abs(ps.readinessScore-prevPs.readinessScore).toFixed(1):'—';
+    const phaseData=[
+      {en:'SIT Execution',zh:'SIT执行',start:14,end:19},
+      {en:'SIT Complete & Perf',zh:'SIT完成与性能',start:20,end:25},
+      {en:'Pre-UAT',zh:'UAT前准备',start:26,end:29},
+      {en:'UAT Execution',zh:'UAT执行',start:30,end:37},
+      {en:'Pre Go-Live',zh:'上线前准备',start:38,end:44},
+      {en:'Cutover',zh:'切换',start:45,end:48}
+    ];
+    let html=`<h2 class="section-title">${T('Executive Dashboard','执行仪表板')}</h2>`;
+    html+=`<div class="timeline">${phaseData.map(p=>`<div class="timeline-phase${weekNum>=p.start&&weekNum<=p.end?' current':weekNum>p.end?' done':''}">${T(p.en,p.zh)}</div>`).join('')}</div>`;
+    html+=`<div class="grid grid-5">
+      ${kpiCard(ps.readinessScore.toFixed(1)+'%',T('Readiness','就绪度'),'',ps.readinessScore>=70?'var(--accent-success)':ps.readinessScore>=50?'var(--accent-warning)':'var(--accent-danger)')}
+      ${kpiCard(ps.daysToGoLive,T('Days to Go-Live','距上线天数'))}
+      ${kpiCard(ps.criticalBlockerCount,T('Critical+Blocker','关键+阻塞'),'','var(--accent-danger)')}
+      ${kpiCard(ps.scheduleDelta>=0?'+'+ps.scheduleDelta:ps.scheduleDelta,T('Schedule Δ','进度偏差'),'',ps.scheduleDelta>=0?'var(--accent-success)':'var(--accent-danger)')}
+      ${kpiCard(progressDelta+'%',T('WoW Δ','周环比'),'','var(--accent-secondary)')}
+    </div>`;
+    let summaryPoints=[];
+    if(weekNum<=19){
+      summaryPoints=[
+        {en:`Weekly progress: Readiness at ${ps.readinessScore.toFixed(1)}%, SIT execution at ${dh[0].progress}%`,zh:`每周进度: 就绪度为${ps.readinessScore.toFixed(1)}%，SIT执行达${dh[0].progress}%`},
+        {en:`Work completed: iAM Smart integration testing, trustee data migration dry runs, member registration flow validation`,zh:`已完成工作: iAM Smart集成测试、受托人数据迁移试运行、会员注册流程验证`},
+        {en:`Critical issues: ${ps.criticalCount} critical defects open including facial recognition failures and bulk upload crashes`,zh:`关键问题: ${ps.criticalCount}个关键缺陷未关闭，包括人脸识别失败和批量上传崩溃`}
+      ];
+    } else if(weekNum<=25){
+      summaryPoints=[
+        {en:`Weekly progress: Readiness at ${ps.readinessScore.toFixed(1)}%, SIT at ${dh[0].progress}%, performance testing active`,zh:`每周进度: 就绪度为${ps.readinessScore.toFixed(1)}%，SIT达${dh[0].progress}%，性能测试进行中`},
+        {en:`Work completed: Performance baseline established, security pen testing progressing, data migration accuracy improving`,zh:`已完成工作: 性能基线已建立、安全渗透测试推进中、数据迁移准确率提升`},
+        {en:`Critical issues: ${ps.criticalCount} critical defects; FPS payment timeouts and HSBC API stale data under investigation`,zh:`关键问题: ${ps.criticalCount}个关键缺陷；FPS支付超时和汇丰API数据过期调查中`}
+      ];
+    } else if(weekNum<=29){
+      summaryPoints=[
+        {en:`Weekly progress: Readiness at ${ps.readinessScore.toFixed(1)}%, UAT preparation and environment readiness in focus`,zh:`每周进度: 就绪度为${ps.readinessScore.toFixed(1)}%，重点关注UAT准备和环境就绪`},
+        {en:`Work completed: SIT nearing completion, DR drills progressing, compliance framework reviews ongoing`,zh:`已完成工作: SIT接近完成、灾备演练推进中、合规框架审查进行中`},
+        {en:`Critical issues: UAT kickoff depends on SIT completion; ${ps.criticalCount} critical defects remaining`,zh:`关键问题: UAT启动取决于SIT完成；剩余${ps.criticalCount}个关键缺陷`}
+      ];
+    } else {
+      summaryPoints=[
+        {en:`Weekly progress: Readiness at ${ps.readinessScore.toFixed(1)}%, UAT execution actively progressing`,zh:`每周进度: 就绪度为${ps.readinessScore.toFixed(1)}%，UAT执行积极推进中`},
+        {en:`Work completed: UAT sign-off rate increasing, performance testing approaching targets, compliance reviews advancing`,zh:`已完成工作: UAT签收率上升、性能测试接近目标、合规审查推进`},
+        {en:`Critical issues: ${ps.criticalCount} critical defects remaining; target all resolved before go-live gate review`,zh:`关键问题: 剩余${ps.criticalCount}个关键缺陷；目标在上线关卡审查前全部解决`}
+      ];
+    }
+    html+=`<div class="card" style="margin-top:var(--space-md);padding:var(--space-lg)"><h3 style="margin-bottom:var(--space-md);font-size:16px;font-weight:600">${T('Executive Summary','执行摘要')}</h3><ul style="margin:0;padding-left:24px;font-size:14px;line-height:1.8">${summaryPoints.map(p=>`<li>${currentLang==='en'?p.en:p.zh}</li>`).join('')}</ul></div>`;
+    html+=`<div style="margin-top:var(--space-md)">${renderReadinessChart()}</div>`;
+    const dhH=[T('Domain','领域'),T('Status','状态'),T('Progress','进度'),T('Pass Rate','通过率'),T('Open Defects','未关闭缺陷'),T('Risk','风险')];
+    const dhR=dh.map(d=>[T(d.domain,d.domainZh),ragDot(d.status)+d.status.toUpperCase(),progressBar(d.progress,d.status==='green'?'var(--accent-success)':d.status==='amber'?'var(--accent-warning)':'var(--accent-danger)')+`<span style="font-size:11px">${d.progress}%</span>`,pct(d.passRate),d.openDefects,badge(T(d.risk,d.riskZh),badgeClass(d.risk==='High'||d.risk==='Not Started'?'red':d.risk==='Medium'?'amber':'green'))]);
+    html+=`<div class="subsection"><h3>${T('Domain Health Overview','领域健康概览')}</h3>${makeTable(dhH,dhR)}</div>`;
+    if(df.length){const labels=df.map(d=>d.day);const chart=lineChart([{values:df.map(d=>d.opened),color:'var(--accent-danger)'},{values:df.map(d=>d.resolved),color:'var(--accent-success)'}],700,220,labels);html+=`<div class="subsection"><h3>${T('14-Day Defect Trend','14天缺陷趋势')}</h3><div class="card chart-container"><div style="display:flex;gap:24px;margin-bottom:8px;font-size:12px"><span style="color:var(--accent-danger)">● ${T('Opened','新增')}</span><span style="color:var(--accent-success)">● ${T('Resolved','已解决')}</span></div>${chart}</div></div>`}
+    if(kr)html+=calloutBox(T('Key Risks & Actions','关键风险与行动'),kr[currentLang]);
+    return html;
+  }
+  function renderSIT(){
+    const sm=D.sitModules[currentWeek]||[];const ds=D.defectsBySeverity[currentWeek]||[];const da=D.defectAging[currentWeek]||[];const de=D.dailyExec[currentWeek]||[];const rc=D.reqCoverage[currentWeek]||[];const td=D.topDefects[currentWeek]||[];const df=D.defectTrend14d[currentWeek]||[];
+    let totalExec=0,totalPass=0,totalFail=0,totalBlocked=0,totalAll=0;
+    sm.forEach(m=>{totalAll+=m.total;totalPass+=m.pass;totalFail+=m.fail;totalBlocked+=m.blocked});totalExec=totalPass+totalFail+totalBlocked;
+    let html=`<h2 class="section-title">${T('Functional Testing — SIT','功能测试 — SIT')}</h2>`;
+    html+=`<div class="grid grid-5">${kpiCard(totalAll.toLocaleString(),T('Total Cases','总用例'))}${kpiCard(pct(totalExec/totalAll*100),T('Executed','已执行'))}${kpiCard(pct(totalPass/totalExec*100),T('Pass Rate','通过率'),'',totalPass/totalExec>.75?'var(--accent-success)':'var(--accent-warning)')}${kpiCard(totalFail,T('Failed','失败'),'','var(--accent-danger)')}${kpiCard(totalBlocked,T('Blocked','阻塞'),'','var(--accent-warning)')}</div>`;
+    const mH=[T('Module','模块'),T('Total','总计'),T('Execution','执行情况'),T('Pass','通过'),T('Fail','失败'),T('Blocked','阻塞'),T('Not Run','未执行')];
+    const mR=sm.map(m=>{const bar=`<div class="stacked-bar"><div style="width:${m.pass/m.total*100}%;background:var(--accent-success)" title="Pass"></div><div style="width:${m.fail/m.total*100}%;background:var(--accent-danger)" title="Fail"></div><div style="width:${m.blocked/m.total*100}%;background:var(--accent-warning)" title="Blocked"></div><div style="width:${m.notRun/m.total*100}%;background:var(--border)" title="Not Run"></div></div>`;return [T(m.module,m.moduleZh),m.total,bar,m.pass,m.fail,m.blocked,m.notRun]});
+    html+=`<div class="subsection"><h3>${T('Module Execution','模块执行')}</h3>${makeTable(mH,mR)}</div>`;
+    html+=`<div class="subsection grid grid-2">`;
+    const totalDef=ds.reduce((s,d)=>s+d.count,0)||1;
+    html+=`<div class="card"><h3 style="margin-bottom:12px">${T('Defects by Severity','按严重程度分类')}</h3><div class="donut-wrap"><svg width="120" height="120" viewBox="0 0 120 120">`;
+    let angle=0;ds.forEach(d=>{const p=d.count/totalDef;const a1=angle*Math.PI*2-Math.PI/2;angle+=p;const a2=angle*Math.PI*2-Math.PI/2;const lg=p>0.5?1:0;const x1=60+45*Math.cos(a1),y1=60+45*Math.sin(a1),x2=60+45*Math.cos(a2),y2=60+45*Math.sin(a2);html+=`<path d="M60,60 L${x1},${y1} A45,45 0 ${lg},1 ${x2},${y2} Z" fill="${d.color}" opacity="0.85"/>`});
+    html+=`<circle cx="60" cy="60" r="28" fill="var(--bg-card)"/><text x="60" y="64" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text-primary)">${totalDef}</text></svg><div class="donut-legend">${ds.map(d=>`<div><span class="rag" style="background:${d.color}"></span>${d.severity}: <b>${d.count}</b></div>`).join('')}</div></div></div>`;
+    const agH=[T('Severity','严重程度'),T('Avg Days','平均天数'),T('Max Days','最长天数')];const agR=da.map(d=>[d.severity,d.avg,d.max]);
+    html+=`<div><h3 style="margin-bottom:12px">${T('Defect Aging','缺陷老化')}</h3>${makeTable(agH,agR)}</div></div>`;
+    if(de.length){const maxE=Math.max(...de.map(d=>d.exec))*1.1;html+=`<div class="subsection"><h3>${T('Daily Execution','每日执行')}</h3><div class="card chart-container"><svg width="700" height="200" viewBox="0 0 700 200">`;const bw=700/de.length*0.7;const gap=700/de.length*0.3;de.forEach((d,i)=>{const x=i*(bw+gap)+gap/2+40;const he=d.exec/maxE*150;const hp=d.pass/maxE*150;html+=`<rect x="${x}" y="${180-he}" width="${bw}" height="${he}" rx="3" fill="var(--accent-secondary)" opacity="0.3"/><rect x="${x}" y="${180-hp}" width="${bw}" height="${hp}" rx="3" fill="var(--accent-primary)"/><text x="${x+bw/2}" y="195" text-anchor="middle" font-size="8">${d.day.split('-').pop()}</text>`});html+=`</svg><div style="font-size:11px;display:flex;gap:16px;margin-top:4px"><span style="color:var(--accent-primary)">■ ${T('Passed','通过')}</span><span style="color:var(--accent-secondary);opacity:.5">■ ${T('Executed','执行')}</span></div></div></div>`}
+    if(df.length){const labels=df.map(d=>d.day);html+=`<div class="subsection"><h3>${T('14-Day Defect Trend','14天缺陷趋势')}</h3><div class="card chart-container"><div style="display:flex;gap:24px;margin-bottom:8px;font-size:12px"><span style="color:var(--accent-danger)">● ${T('Opened','新增')}</span><span style="color:var(--accent-success)">● ${T('Resolved','已解决')}</span></div>${lineChart([{values:df.map(d=>d.opened),color:'var(--accent-danger)'},{values:df.map(d=>d.resolved),color:'var(--accent-success)'}],700,200,labels)}</div></div>`}
+    if(rc.length){const rcH=[T('Area','领域'),T('Total','总计'),T('Covered','已覆盖'),T('Coverage','覆盖率')];const rcR=rc.map(r=>[T(r.area,r.areaZh),r.total,r.covered,progressBar(r.pct,r.pct>=90?'var(--accent-success)':r.pct>=75?'var(--accent-warning)':'var(--accent-danger)')+` ${pct(r.pct)}`]);html+=`<div class="subsection"><h3>${T('Requirement Coverage','需求覆盖率')}</h3>${makeTable(rcH,rcR)}</div>`}
+    if(td.length){const tdH=[T('ID','编号'),T('Sev','级别'),T('Module','模块'),T('Description','描述'),T('Age','天数'),T('Owner','负责人'),T('Status','状态')];const tdR=td.map(d=>[d.id,badge(d.sev,badgeClass(d.sev==='Critical'||d.sev==='Blocker'?'red':'amber')),d.module,`<span style="font-size:12px">${T(d.desc,d.descZh)}</span>`,d.age+'d',d.owner,badge(d.status)]);html+=`<div class="subsection"><h3>${T('Top Defects','关键缺陷')}</h3>${makeTable(tdH,tdR)}</div>`}
+    return html;
+  }
+  function renderMigration(){
+    const me=D.migrationEntities[currentWeek]||[];
+    let totalRec=0,totalSrc=0,atRisk=0;me.forEach(e=>{totalSrc+=e.sourceCount;totalRec+=e.targetCount;if(e.status!=='green')atRisk++});
+    const avgAcc=me.length?me.reduce((s,e)=>s+e.accuracy,0)/me.length:0;
+    let html=`<h2 class="section-title">${T('Data Migration','数据迁移')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(me.length,T('Entities','数据实体'))}${kpiCard(totalSrc.toLocaleString(),T('Total Records','总记录数'))}${kpiCard(pct(avgAcc),T('Avg Accuracy','平均准确率'),'',avgAcc>=99?'var(--accent-success)':'var(--accent-warning)')}${kpiCard(atRisk,T('At Risk','有风险'),'','var(--accent-danger)')}</div>`;
+    const h=[T('Entity','实体'),T('Source','源数量'),T('Target','目标数量'),T('Accuracy','准确率'),T('Status','状态')];
+    const rows=me.map(e=>[T(e.entity,e.entityZh),e.sourceCount.toLocaleString(),e.targetCount.toLocaleString(),progressBar(e.accuracy,e.status==='green'?'var(--accent-success)':e.status==='amber'?'var(--accent-warning)':'var(--accent-danger)')+` ${pct(e.accuracy)}`,ragDot(e.status)+e.status.toUpperCase()]);
+    html+=`<div class="subsection">${makeTable(h,rows)}</div>`;
+    return html;
+  }
+  function renderPerf(){
+    const ps=D.perfScenarios[currentWeek]||[];const cu=D.perfConcurrentUsers[currentWeek]||{};const ru=D.perfResourceUtil[currentWeek]||[];
+    if(!ps.length)return `<h2 class="section-title">${T('Performance Testing','性能测试')}</h2><div class="card" style="padding:var(--space-xl);text-align:center;color:var(--text-muted)">${T('Performance testing not yet started. Planned from W20.','性能测试尚未开始。计划从W20开始。')}</div>`;
+    const passing=ps.filter(s=>s.status==='green').length;
+    let html=`<h2 class="section-title">${T('Performance Testing','性能测试')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(ps.length,T('Scenarios','场景'))}${kpiCard(passing+'/'+ps.length,T('P95 Passing','P95通过'),'',passing>=6?'var(--accent-success)':'var(--accent-warning)')}${kpiCard(cu.actual?cu.actual.toLocaleString():'—',T('Concurrent Users','并发用户'))}${kpiCard(cu.peakError?cu.peakError+'%':'—',T('Peak Error Rate','峰值错误率'),'',cu.peakError&&cu.peakError<2?'var(--accent-success)':'var(--accent-warning)')}</div>`;
+    const sH=[T('Scenario','场景'),T('Target(s)','目标(秒)'),T('P50','P50'),T('P90','P90'),T('P95','P95'),T('P99','P99'),T('Status','状态')];
+    const sR=ps.map(s=>[T(s.name,s.nameZh),s.target+'s',s.p50+'s',s.p90+'s',`<b>${s.p95}s</b>`,s.p99+'s',ragDot(s.status)+s.status.toUpperCase()]);
+    html+=`<div class="subsection"><h3>${T('Scenario Response Times','场景响应时间')}</h3>${makeTable(sH,sR)}</div>`;
+    if(ru.length){const ruH=[T('Resource','资源'),T('Avg','平均'),T('Peak','峰值'),T('Target','目标')];const ruR=ru.map(r=>[T(r.resource,r.resourceZh),typeof r.avg==='number'&&r.avg>100?r.avg.toLocaleString():r.avg+(typeof r.avg==='number'&&r.avg<100?'%':''),typeof r.peak==='number'&&r.peak>100?r.peak.toLocaleString():r.peak+(typeof r.peak==='number'&&r.peak<100?'%':''),typeof r.target==='number'&&r.target>100?r.target.toLocaleString():r.target+(typeof r.target==='number'&&r.target<100?'%':'')]);html+=`<div class="subsection"><h3>${T('Resource Utilization','资源使用率')}</h3>${makeTable(ruH,ruR)}</div>`}
+    return html;
+  }
+  function renderSecurity(){
+    const sv=D.secVulnerabilities[currentWeek]||[];const so=D.secOwaspCoverage[currentWeek]||[];const sp=D.secPenTestFindings[currentWeek]||[];
+    if(!sv.length&&!so.length)return `<h2 class="section-title">${T('Security Testing','安全测试')}</h2><div class="card" style="padding:var(--space-xl);text-align:center;color:var(--text-muted)">${T('Security testing not yet started. Planned from W18.','安全测试尚未开始。计划从W18开始。')}</div>`;
+    const critOpen=sv.filter(v=>v.severity==='Critical'&&v.status!=='Resolved').length;const totalOpen=sv.filter(v=>v.status!=='Resolved').length;
+    let html=`<h2 class="section-title">${T('Security Testing','安全测试')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(sv.length,T('Total Vulns','总漏洞数'))}${kpiCard(critOpen,T('Critical Open','关键未关闭'),'','var(--accent-danger)')}${kpiCard(totalOpen,T('Total Open','总未关闭'),'','var(--accent-warning)')}${kpiCard(sv.filter(v=>v.status==='Resolved').length,T('Resolved','已解决'),'','var(--accent-success)')}</div>`;
+    if(so.length){const oH=[T('OWASP Category','OWASP类别'),T('Tested','已测试'),T('Passed','通过'),T('Coverage','覆盖率')];const oR=so.map(c=>[c.category,c.tested+'%',c.passed+'%',progressBar(c.tested,c.tested>=80?'var(--accent-success)':c.tested>=50?'var(--accent-warning)':'var(--accent-danger)')]);html+=`<div class="subsection"><h3>${T('OWASP Top 10 Coverage','OWASP Top 10覆盖率')}</h3>${makeTable(oH,oR)}</div>`}
+    if(sp.length){const pH=[T('ID','编号'),T('Severity','严重程度'),T('Finding','发现'),T('Status','状态')];const pR=sp.map(p=>[p.id,badge(p.severity,badgeClass(p.severity==='Critical'?'red':p.severity==='High'?'amber':'gray')),T(p.finding,p.findingZh),badge(p.status)]);html+=`<div class="subsection"><h3>${T('Pen Test Findings','渗透测试发现')}</h3>${makeTable(pH,pR)}</div>`}
+    return html;
+  }
+  function renderRegression(){
+    const rd=D.regressionData[currentWeek];if(!rd)return'';
+    let html=`<h2 class="section-title">${T('Regression & Automation','回归与自动化')}</h2>`;
+    html+=`<div class="grid grid-5">${kpiCard(rd.totalAutomated.toLocaleString(),T('Automated Tests','自动化测试'))}${kpiCard(pct(rd.passRate),T('Pass Rate','通过率'),'',rd.passRate>=90?'var(--accent-success)':'var(--accent-warning)')}${kpiCard(pct(rd.coverage),T('Coverage','覆盖率'))}${kpiCard(rd.flakyTests,T('Flaky Tests','不稳定测试'),'','var(--accent-warning)')}${kpiCard(rd.avgExecutionMin+'m',T('Avg Exec Time','平均执行时间'))}</div>`;
+    if(rd.runs&&rd.runs.length){const rH=[T('Run Date','运行日期'),T('Passed %','通过率%'),T('Failed %','失败率%')];const rR=rd.runs.map(r=>[r.date,`<span style="color:var(--accent-success)">${r.passed}%</span>`,`<span style="color:var(--accent-danger)">${r.failed}%</span>`]);html+=`<div class="subsection"><h3>${T('Recent Runs','最近运行')}</h3>${makeTable(rH,rR)}</div>`}
+    html+=`<div class="subsection grid grid-2"><div class="card" style="padding:var(--space-lg)"><h3 style="margin-bottom:8px">${T('Automation ROI','自动化投资回报')}</h3><p style="font-size:13px;color:var(--text-secondary)">${T(`Manual equivalent: ${rd.manualEquivMin} minutes per cycle. Automated: ${rd.avgExecutionMin} minutes. Savings: ${(rd.manualEquivMin-rd.avgExecutionMin).toFixed(1)} min/cycle (${((1-rd.avgExecutionMin/rd.manualEquivMin)*100).toFixed(0)}% reduction)`,`手动等效: 每周期${rd.manualEquivMin}分钟。自动化: ${rd.avgExecutionMin}分钟。节省: ${(rd.manualEquivMin-rd.avgExecutionMin).toFixed(1)}分/周期 (减少${((1-rd.avgExecutionMin/rd.manualEquivMin)*100).toFixed(0)}%)`)}</p></div><div class="card" style="padding:var(--space-lg)"><h3 style="margin-bottom:8px">${T('Flaky Rate Trend','不稳定率趋势')}</h3><p style="font-size:13px;color:var(--text-secondary)">${T(`Current flaky rate: ${rd.flakyRate}% (${rd.flakyTests} tests). Target: <2%`,`当前不稳定率: ${rd.flakyRate}% (${rd.flakyTests}个测试)。目标: <2%`)}</p></div></div>`;
+    return html;
+  }
+  function renderUAT(){
+    const um=D.uatModules[currentWeek]||[];
+    if(!um.length)return `<h2 class="section-title">${T('User Acceptance Testing','用户验收测试')}</h2><div class="card" style="padding:var(--space-xl);text-align:center;color:var(--text-muted)">${T('UAT not yet started. Planned from W28 after SIT completion.','UAT尚未开始。计划在SIT完成后从W28开始。')}</div>`;
+    const totalSc=um.reduce((s,m)=>s+m.scenarios,0);const totalSigned=um.reduce((s,m)=>s+m.signedOff,0);
+    let html=`<h2 class="section-title">${T('User Acceptance Testing','用户验收测试')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(um.length,T('Modules','模块'))}${kpiCard(totalSc,T('Total Scenarios','总场景'))}${kpiCard(totalSigned,T('Signed Off','已签收'),'','var(--accent-success)')}${kpiCard(pct(totalSigned/totalSc*100),T('Sign-off Rate','签收率'),'',totalSigned/totalSc>.7?'var(--accent-success)':'var(--accent-warning)')}</div>`;
+    const uH=[T('Module','模块'),T('Scenarios','场景数'),T('Signed Off','已签收'),T('Progress','进度'),T('Status','状态')];
+    const uR=um.map(m=>[T(m.module,m.moduleZh),m.scenarios,m.signedOff,progressBar(m.signedOff/m.scenarios*100,m.status==='Signed Off'?'var(--accent-success)':m.status==='In Progress'?'var(--accent-warning)':'var(--accent-danger)')+` ${pct(m.signedOff/m.scenarios*100)}`,badge(m.status)]);
+    html+=`<div class="subsection">${makeTable(uH,uR)}</div>`;
+    return html;
+  }
+  function renderDR(){
+    const dr=D.drDrills[currentWeek]||[];
+    if(!dr.length)return `<h2 class="section-title">${T('DR / Business Continuity','灾难恢复/业务连续性')}</h2><div class="card" style="padding:var(--space-xl);text-align:center;color:var(--text-muted)">${T('No DR drills completed yet.','尚未完成灾备演练。')}</div>`;
+    const passed=dr.filter(d=>d.result==='Pass').length;
+    let html=`<h2 class="section-title">${T('DR / Business Continuity','灾难恢复/业务连续性')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(dr.length,T('Drills','演练次数'))}${kpiCard(passed,T('Passed','通过'),'','var(--accent-success)')}${kpiCard('4h',T('RTO Target','RTO目标'))}${kpiCard('1h',T('RPO Target','RPO目标'))}</div>`;
+    const dH=[T('Drill','演练'),T('Date','日期'),T('RTO Target','RTO目标'),T('RTO Actual','RTO实际'),T('RPO Target','RPO目标'),T('RPO Actual','RPO实际'),T('Data Integrity','数据完整性'),T('Result','结果')];
+    const dR=dr.map(d=>[T(d.drill,d.drillZh),d.date,d.rtoTarget+'h',d.rtoActual+'h',d.rpoTarget+'h',d.rpoActual+'h',d.dataIntegrity+'%',badge(d.result)]);
+    html+=`<div class="subsection">${makeTable(dH,dR)}</div>`;
+    return html;
+  }
+  function renderCompliance(){
+    const cf=D.complianceFrameworks[currentWeek]||[];const fi=D.complianceFindings[currentWeek]||[];
+    let totalC=0,totalM=0;cf.forEach(f=>{totalC+=f.controls;totalM+=f.met});
+    let html=`<h2 class="section-title">${T('Compliance','合规测试')}</h2>`;
+    html+=`<div class="grid grid-3">${kpiCard(totalC,T('Total Controls','总控制项'))}${kpiCard(totalM,T('Met','已满足'),'','var(--accent-success)')}${kpiCard(fi.filter(f=>f.severity==='Critical'&&f.status==='Open').length,T('Critical Open','关键未关闭'),'','var(--accent-danger)')}</div>`;
+    const fH=[T('Framework','框架'),T('Controls','控制项'),T('Met','已满足'),T('In Progress','进行中'),T('Not Started','未开始'),T('Compliance','合规率')];
+    const fR=cf.map(f=>[f.framework,f.controls,f.met,f.inProgress,f.notStarted,progressBar(f.met/f.controls*100,'var(--accent-success)')+` ${pct(f.met/f.controls*100)}`]);
+    html+=`<div class="subsection"><h3>${T('Framework Status','框架状态')}</h3>${makeTable(fH,fR)}</div>`;
+    if(fi.length){const fiH=['ID',T('Severity','严重程度'),T('Finding','发现'),T('Status','状态')];const fiR=fi.map(f=>[f.id,badge(f.severity,badgeClass(f.severity==='Critical'?'red':f.severity==='High'?'amber':'gray')),T(f.finding,f.findingZh),badge(f.status)]);html+=`<div class="subsection"><h3>${T('Audit Findings','审计发现')}</h3>${makeTable(fiH,fiR)}</div>`}
+    return html;
+  }
+  function renderGoLive(){
+    const gl=D.goLiveGates[currentWeek]||[];const ps=D.projectSummary[currentWeek]||D.projectSummary.W22;
+    const green=gl.filter(g=>g.status==='green').length;const amber=gl.filter(g=>g.status==='amber').length;const red=gl.filter(g=>g.status==='red').length;
+    let html=`<h2 class="section-title">${T('Go-Live Readiness','上线就绪度')}</h2>`;
+    html+=`<div class="grid grid-4">${kpiCard(ps.readinessScore.toFixed(1)+'%',T('Readiness Score','就绪度评分'),'',ps.readinessScore>=70?'var(--accent-success)':ps.readinessScore>=50?'var(--accent-warning)':'var(--accent-danger)')}${kpiCard(green+'/'+gl.length,T('Gates Met','已达标'),'','var(--accent-success)')}${kpiCard(ps.daysToGoLive,T('Days to Go-Live','距上线天数'))}${kpiCard(`<span style="color:var(--accent-success)">${green}</span> · <span style="color:var(--accent-warning)">${amber}</span> · <span style="color:var(--accent-danger)">${red}</span>`,T('G / A / R','绿/黄/红'))}</div>`;
+    html+=`<div style="margin-top:var(--space-md)">${renderReadinessChart()}</div>`;
+    const gH=[T('Gate','关卡'),T('Target','目标'),T('Current','当前'),T('Status','状态')];
+    const gR=gl.map(g=>[T(g.gate,g.gateZh),g.target,g.current,ragDot(g.status)+badge(g.status.toUpperCase(),badgeClass(g.status))]);
+    html+=`<div class="subsection">${makeTable(gH,gR)}</div>`;
+    return html;
+  }
+  function renderTrusteeOnboarding(){
+    const ps=D.projectSummary[currentWeek]||D.projectSummary.W22;
+    const weekNum=ps.weekNumber;
+    const trustees=[
+      {name:'YF Life Trustees',nameZh:'YF Life受托人',aum:12,date:'Jun 26, 2024',status:'Onboarded',members:35000},
+      {name:'China Life Trustees',nameZh:'中国人寿受托人',aum:18,date:'Jul 29, 2024',status:'Onboarded',members:52000},
+      {name:'Standard Chartered',nameZh:'渣打银行',aum:25,date:'Sep 2024',status:'Onboarded',members:85000},
+      {name:'BEA Trustees',nameZh:'东亚银行受托人',aum:32,date:'Nov 2024',status:'Onboarded',members:120000},
+      {name:'Sun Life Trustees',nameZh:'永明金融受托人',aum:45,date:'Oct 03, 2025',status:'Onboarded',members:280000},
+      {name:'Manulife Trustees',nameZh:'宏利受托人',aum:85,date:'Oct 2025',status:'Onboarded',members:520000},
+      {name:'AIA Trustees',nameZh:'友邦受托人',aum:120,date:'Nov 2025',status:'Onboarded',members:680000},
+      {name:'BCT Trustees',nameZh:'银联受托人',aum:95,date:'Dec 2025',status:'Onboarded',members:450000},
+      {name:'BOCI-Prudential',nameZh:'中银保诚受托人',aum:135,date:'Jan 2026',status:'Onboarded',members:720000},
+      {name:'HSBC Provident Fund',nameZh:'汇丰公积金',aum:280,date:'Jan 29, 2026',status:'Onboarded',members:950000},
+      {name:'Hang Seng Trustees',nameZh:'恒生受托人',aum:195,date:'Jan 29, 2026',status:'Onboarded',members:610000},
+      {name:'BEA (MPF) Industry',nameZh:'东亚(MPF)行业计划',aum:8,date:'Apr 30, 2026',status:weekNum>=26?'Onboarded':'In Progress',members:25000},
+    ];
+    const onboarded=trustees.filter(t=>t.status==='Onboarded').length;
+    const totalMembers=trustees.reduce((s,t)=>s+t.members,0);
+    const totalAUM=trustees.reduce((s,t)=>s+t.aum,0);
+    let html=`<h2 class="section-title">${T('Trustee Onboarding Status','受托人入驻状态')}</h2>`;
+    html+=`<div class="grid grid-4">
+      ${kpiCard(onboarded+'/'+trustees.length,T('Onboarded','已入驻'),'','var(--accent-success)')}
+      ${kpiCard(totalMembers.toLocaleString(),T('Total Members','总会员数'))}
+      ${kpiCard('HK$'+totalAUM+'B',T('Total AUM','总管理资产'))}
+      ${kpiCard(trustees.filter(t=>t.status!=='Onboarded').length,T('Remaining','待入驻'),'',trustees.filter(t=>t.status!=='Onboarded').length===0?'var(--accent-success)':'var(--accent-warning)')}
+    </div>`;
+    const tH=[T('Trustee','受托人'),T('AUM (HK$B)','管理资产(港币十亿)'),T('Members','会员数'),T('Onboarding Date','入驻日期'),T('Status','状态')];
+    const tR=trustees.map(t=>[T(t.name,t.nameZh),t.aum,t.members.toLocaleString(),t.date,badge(t.status,badgeClass(t.status==='Onboarded'?'green':t.status==='In Progress'?'amber':'red'))]);
+    html+=`<div class="subsection"><h3>${T('Trustee Details','受托人详情')}</h3>${makeTable(tH,tR)}</div>`;
+    const pctOnboarded=onboarded/trustees.length*100;
+    html+=`<div class="subsection"><h3>${T('Onboarding Progress','入驻进度')}</h3><div class="card" style="padding:var(--space-lg)"><div style="margin-bottom:8px;font-size:14px;font-weight:600">${pct(pctOnboarded)} ${T('Complete','完成')}</div>${progressBar(pctOnboarded,'var(--accent-success)')}<div style="margin-top:12px;font-size:13px;color:var(--text-secondary)">${T(`${onboarded} of ${trustees.length} trustees onboarded. Total ${totalMembers.toLocaleString()} members migrated to eMPF Platform.`,`${onboarded}/${trustees.length}个受托人已入驻。共${totalMembers.toLocaleString()}名会员已迁移至eMPF平台。`)}</div></div></div>`;
+    const milestones=[
+      {en:'Phase 1: Small trustees (YF Life, China Life) — Jun-Jul 2024',zh:'阶段1: 小型受托人 (YF Life, 中国人寿) — 2024年6-7月',done:true},
+      {en:'Phase 2: Mid-size trustees (Standard Chartered, BEA, Sun Life) — Sep 2024 - Oct 2025',zh:'阶段2: 中型受托人 (渣打, 东亚, 永明) — 2024年9月-2025年10月',done:true},
+      {en:'Phase 3: Large trustees (Manulife, AIA, BCT, BOCI) — Oct 2025 - Jan 2026',zh:'阶段3: 大型受托人 (宏利, 友邦, 银联, 中银保诚) — 2025年10月-2026年1月',done:true},
+      {en:'Phase 4: Largest trustees (HSBC, Hang Seng) — Jan 29, 2026',zh:'阶段4: 最大受托人 (汇丰, 恒生) — 2026年1月29日',done:true},
+      {en:'Phase 5: Final trustee (BEA Industry Scheme) — Apr 30, 2026',zh:'阶段5: 最终受托人 (东亚行业计划) — 2026年4月30日',done:weekNum>=26},
+      {en:'MPF Full Portability Phase 1 Go-Live — Dec 31, 2026',zh:'强积金全面可携性第一阶段上线 — 2026年12月31日',done:false},
+    ];
+    html+=calloutBox(T('Onboarding Milestones','入驻里程碑'),milestones.map(m=>`${m.done?'✅':'⏳'} ${T(m.en,m.zh)}`));
+    return html;
+  }
+
+  const RENDERERS=[renderDashboard,renderSIT,renderMigration,renderPerf,renderSecurity,renderRegression,renderUAT,renderDR,renderCompliance,renderGoLive,renderTrusteeOnboarding];
+  window.QA={
+    WEEKS:WEEKS,
+    WEEK_DATES:WEEK_DATES,
+    NAV_ITEMS:NAV_ITEMS,
+    render:function(section,week,lang){
+      currentWeek=(week&&WEEKS.indexOf(week)>=0)?week:'W22';
+      currentLang=(lang==='zh')?'zh':'en';
+      const idx=(typeof section==='number'&&section>=0&&section<RENDERERS.length)?section:0;
+      try{return RENDERERS[idx]();}catch(e){return `<div class="card" style="padding:var(--space-xl);color:var(--accent-danger)"><strong>QA render error:</strong> ${e.message}</div>`;}
+    }
+  };
+})();
+</script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useMemo,createElement}=React;
+const RC=window.Recharts;
+const HAS_RC=!!RC;
+const Stub=({children,...p})=>React.createElement('div',{style:{padding:20,textAlign:'center',color:'#888',fontSize:12,border:'1px dashed #ccc',borderRadius:6}},'Chart library not loaded');
+const BarChart=HAS_RC?RC.BarChart:Stub,Bar=HAS_RC?RC.Bar:Stub,LineChart=HAS_RC?RC.LineChart:Stub,Line=HAS_RC?RC.Line:Stub,PieChart=HAS_RC?RC.PieChart:Stub,Pie=HAS_RC?RC.Pie:Stub,Cell=HAS_RC?RC.Cell:Stub,XAxis=HAS_RC?RC.XAxis:Stub,YAxis=HAS_RC?RC.YAxis:Stub,CartesianGrid=HAS_RC?RC.CartesianGrid:Stub,Tooltip=HAS_RC?RC.Tooltip:Stub,Legend=HAS_RC?RC.Legend:Stub,ResponsiveContainer=HAS_RC?RC.ResponsiveContainer:Stub,AreaChart=HAS_RC?RC.AreaChart:Stub,Area=HAS_RC?RC.Area:Stub,ReferenceLine=HAS_RC?RC.ReferenceLine:Stub,ComposedChart=HAS_RC?RC.ComposedChart:Stub;
+const D=window.__DATA__||{incidents:[],problems:[],kbs:[],bugs:[],testcases:[]};
+// Pre-index by system_module for O(1) lookup at scale (10k+ rows)
+const _byMod=(arr,key='system_module')=>{const m={};MODULES.forEach(x=>m[x]=[]);arr.forEach(r=>{const k=r[key];if(m[k])m[k].push(r);});return m;};
+const IDX={inc:null,prb:null,bug:null,tc:null};
+const COLORS=['#0c5c87','#1a7ab8','#2e7d32','#c46b1c','#c62828','#6e4c9e','#00838f','#558b2f'];
+const MODULES=['ACCT-CONSOL','API-GATEWAY','AUTH-IAM','BATCH-PROC','CLAIM-PROC','CONTRIB-ENGINE','DATA-PLATFORM','DOC-MGMT','EMP-PORTAL','FUND-MGMT','INFRA','MBR-PORTAL','NOTIF-SVC','RPT-ANALYTICS','TRS-GATEWAY'];
+const MOD_LABEL={'MBR-PORTAL':'Member Portal','EMP-PORTAL':'Empotre Portal','TRS-GATEWAY':'Trustee Gateway','CONTRIB-ENGINE':'Contribution Engine','FUND-MGMT':'Fund Management','CLAIM-PROC':'Claim Processing','ACCT-CONSOL':'Account Consolidation','NOTIF-SVC':'Notification Services','RPT-ANALYTICS':'Report & Analysis','AUTH-IAM':'Authentication & IAM','DOC-MGMT':'Document Management','BATCH-PROC':'Batch Processing','API-GATEWAY':'API Gateway','DATA-PLATFORM':'Data Platform','INFRA':'Infrastructure'};
+const ml=k=>MOD_LABEL[k]||k||'—';
+const splitIds=s=>!s?[]:String(s).split('|').filter(Boolean);
+const fmtDate=d=>!d?'—':String(d).slice(0,10);
+const monthOf=d=>!d?null:String(d).slice(0,7);
+const ragColor=s=>s>=80?'var(--accent-success)':s>=60?'var(--accent-warning)':'var(--accent-danger)';
+const ragClass=s=>s>=80?'green':s>=60?'amber':'red';
+const Badge=({v,cls})=>!v?null:<span className={`badge ${cls||'badge-gray'}`}>{v}</span>;
+const sevClass=v=>({S1_CRITICAL:'badge-red',S2_HIGH:'badge-amber',S3_MEDIUM:'badge-blue',S4_LOW:'badge-gray'})[v]||'badge-gray';
+const priClass=v=>({P1:'badge-red',P2:'badge-amber',P3:'badge-blue',P4:'badge-gray'})[v]||'badge-gray';
+const statClass=v=>['RESOLVED','CLOSED','FIXED','PASS','ACTIVE','VERIFIED'].includes(v)?'badge-green':['OPEN','REOPENED','FAIL'].includes(v)?'badge-red':'badge-amber';
+
+function DateCell({value,onChange}){const [e,setE]=useState(false);const [v,setV]=useState(fmtDate(value));if(e)return <input type="date" value={v} autoFocus onBlur={()=>{setE(false);onChange&&onChange(v);}} onChange={x=>setV(x.target.value)} style={{padding:'2px 4px',fontSize:12}}/>;return <span onClick={x=>{x.stopPropagation();setE(true);}} style={{cursor:'pointer',borderBottom:'1px dashed var(--text-muted)'}}>{fmtDate(value)}</span>;}
+function StatusCell({value,options,onChange}){return <select value={value||''} onClick={e=>e.stopPropagation()} onChange={e=>{e.stopPropagation();onChange&&onChange(e.target.value);}} style={{padding:'3px 6px',fontSize:12,border:'1px solid var(--border)',background:'var(--bg-card)',color:'var(--text-primary)',borderRadius:4}}>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>;}
+
+function DataTable({rows,cols,onRowClick,pageSize=12}){const [q,setQ]=useState('');const [page,setPage]=useState(0);const [f,setF]=useState({});const [data,setData]=useState(rows);useEffect(()=>{setData(rows);setPage(0);},[rows]);const filtered=useMemo(()=>data.filter(r=>{if(q&&!JSON.stringify(r).toLowerCase().includes(q.toLowerCase()))return false;for(const k in f)if(f[k]&&r[k]!==f[k])return false;return true;}),[data,q,f]);const pages=Math.ceil(filtered.length/pageSize);const paged=filtered.slice(page*pageSize,(page+1)*pageSize);const filterable=cols.filter(c=>c.filter);return <div><div className="filters"><input placeholder="🔍 Search all fields..." value={q} onChange={e=>setQ(e.target.value)} style={{flex:1,minWidth:220}}/>{filterable.map(c=>{const opts=[...new Set(data.map(r=>r[c.key]).filter(Boolean))].sort();return <select key={c.key} value={f[c.key]||''} onChange={e=>setF({...f,[c.key]:e.target.value})}><option value="">All {c.label}</option>{opts.map(o=><option key={o} value={o}>{c.key==='system_module'?ml(o):o}</option>)}</select>;})}</div><div className="tbl-wrap"><table><thead><tr>{cols.map(c=><th key={c.key}>{c.label}</th>)}</tr></thead><tbody>{paged.map((r,i)=><tr key={i} onClick={()=>onRowClick&&onRowClick(r)} style={{cursor:onRowClick?'pointer':''}}>{cols.map(c=><td key={c.key}>{c.render?c.render(r,nr=>setData(data.map(x=>x===r?nr:x))):(r[c.key]==null?'—':String(r[c.key]))}</td>)}</tr>)}{!paged.length&&<tr><td colSpan={cols.length} style={{textAlign:'center',padding:24,color:'var(--text-muted)'}}>No records</td></tr>}</tbody></table></div><div className="pagination"><button onClick={()=>setPage(0)} disabled={page===0}>«</button><button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0}>‹</button><span>Page {page+1}/{Math.max(1,pages)} · {filtered.length} records</span><button onClick={()=>setPage(p=>Math.min(pages-1,p+1))} disabled={page>=pages-1}>›</button><button onClick={()=>setPage(pages-1)} disabled={page>=pages-1}>»</button></div></div>;}
+
+function ProcessFlow({anchor,anchorType}){let incident=null,problem=null,bug=null,testcases=[],kbs=[];if(anchorType==='bug'){bug=anchor;incident=D.incidents.find(i=>i.incident_id===bug.primary_incident_id);problem=D.problems.find(p=>p.problem_id===bug.primary_problem_id);testcases=D.testcases.filter(t=>t.source_bug_id===bug.bug_id);kbs=D.kbs.filter(k=>splitIds(bug.related_kb_article_ids).includes(k.kb_id));}else if(anchorType==='testcase'){const tc=anchor;testcases=[tc];bug=D.bugs.find(b=>b.bug_id===tc.source_bug_id);if(bug){incident=D.incidents.find(i=>i.incident_id===bug.primary_incident_id);problem=D.problems.find(p=>p.problem_id===bug.primary_problem_id);kbs=D.kbs.filter(k=>splitIds(bug.related_kb_article_ids).includes(k.kb_id));}}const phases=[{ic:'⚠️',l:'Incident',a:!!incident},{ic:'📋',l:'Problem',a:!!problem},{ic:'📚',l:'Knowledge Base',a:kbs.length>0},{ic:'🐞',l:'Bug Fix',a:!!bug},{ic:'✅',l:'Retest',a:testcases.length>0}];const Card=({o,f,cls=''})=>o?<div className={`pcard ${cls}`}><div className="pcard-id">{o[f.id]}</div><div className="pcard-title">{(o[f.title]||'').slice(0,55)}</div><div className="pcard-meta">{f.meta(o)}</div></div>:<div className="empty">No record</div>;return <div className="pflow"><h3 style={{marginBottom:14}}>🔄 Traceability Flow</h3><div className="pflow-phases">{phases.map((p,i)=><React.Fragment key={i}><div className="phase"><div className={`phase-circle ${!p.a?'inactive':''}`}>{p.ic}</div><div className="phase-label">{p.l}</div></div>{(phases.length>i+1)&&<div className="phase-arrow">»»</div>}</React.Fragment>)}</div><div className="pflow-cards"><div className="pcard-slot"><Card o={incident} f={{id:'incident_id',title:'title',meta:o=>`Module: ${ml(o.system_module)}\nCreated: ${fmtDate(o.created_date)}\nSeverity: ${o.severity||'—'}`}}/></div><div className="arrow-slot">»»</div><div className="pcard-slot"><Card o={problem} f={{id:'problem_id',title:'title',meta:o=>`Priority: ${o.priority}\nCreated: ${fmtDate(o.created_date)}\nResolved: ${fmtDate(o.resolved_date)}`}}/></div><div className="arrow-slot">»»</div><div className="pcard-slot">{kbs.length?kbs.slice(0,3).map(k=><div key={k.kb_id} className="pcard kb"><div className="pcard-id">{k.kb_id}</div><div className="pcard-title">{(k.title||'').slice(0,45)}</div><div className="pcard-meta">Used: {k.usage_count}× · Eff: {k.effectiveness_score}</div></div>):<div className="empty">No KB used</div>}</div><div className="arrow-slot">»»</div><div className="pcard-slot"><Card o={bug} f={{id:'bug_id',title:'title',meta:o=>`Severity: ${o.severity}\nAssigned: ${o.assigned_to}\nFixed: ${fmtDate(o.fix_verified_date)}`}}/></div><div className="arrow-slot">»»</div><div className="pcard-slot">{testcases.length?testcases.slice(0,3).map(t=><div key={t.testcase_id} className="pcard"><div className="pcard-id">{t.testcase_id}</div><div className="pcard-title">{(t.title||'').slice(0,45)}</div><div className="pcard-meta">Type: {t.test_type}{'\n'}Exec: {fmtDate(t.execution_date)}{'\n'}Result: {t.test_result||'—'}</div></div>):<div className="empty">No retest</div>}</div></div></div>;}
+
+/* ===== FULL-COLUMN LIST VIEWS ===== */
+const IncCols=()=>[{key:'incident_id',label:'ID'},{key:'title',label:'Title',render:r=><span title={r.title}>{(r.title||'').slice(0,50)}</span>},{key:'system_module',label:'Module',filter:true,render:r=>ml(r.system_module)},{key:'category',label:'Category',filter:true},{key:'subcategory',label:'Sub',filter:true},{key:'environment',label:'Env',filter:true},{key:'severity',label:'Sev',filter:true,render:r=><Badge v={r.severity} cls={sevClass(r.severity)}/>},{key:'priority',label:'Pri',filter:true,render:r=><Badge v={r.priority} cls={priClass(r.priority)}/>},{key:'status',label:'Status',filter:true,render:(r,u)=><StatusCell value={r.status} options={['OPEN','IN_PROGRESS','RESOLVED','CLOSED','PENDING']} onChange={v=>u({...r,status:v})}/>},{key:'reported_by',label:'Reported By'},{key:'assigned_team',label:'Team',filter:true},{key:'assigned_to',label:'Assigned'},{key:'created_date',label:'Created',render:(r,u)=><DateCell value={r.created_date} onChange={v=>u({...r,created_date:v})}/>},{key:'resolved_date',label:'Resolved',render:(r,u)=><DateCell value={r.resolved_date} onChange={v=>u({...r,resolved_date:v})}/>},{key:'resolution_time_mins',label:'Res. (min)'},{key:'sla_breached',label:'SLA Breach',render:r=>r.sla_breached?'⚠️ Yes':'✓ No'},{key:'root_cause_category',label:'Root Cause'},{key:'affected_users_count',label:'Users Impacted'},{key:'business_impact',label:'Biz Impact'},{key:'related_problem_id',label:'Problem'},{key:'primary_bug_id',label:'Primary Bug'}];
+const PrbCols=()=>[{key:'problem_id',label:'ID'},{key:'title',label:'Title',render:r=>(r.title||'').slice(0,50)},{key:'system_module',label:'Module',filter:true,render:r=>ml(r.system_module)},{key:'category',label:'Category',filter:true},{key:'priority',label:'Pri',filter:true,render:r=><Badge v={r.priority} cls={priClass(r.priority)}/>},{key:'status',label:'Status',filter:true,render:(r,u)=><StatusCell value={r.status} options={['OPEN','IN_PROGRESS','RESOLVED','CLOSED']} onChange={v=>u({...r,status:v})}/>},{key:'assigned_team',label:'Team'},{key:'assigned_to',label:'Assigned'},{key:'vendor_involved',label:'Vendor',render:r=>r.vendor_involved?'Yes':'No'},{key:'created_date',label:'Created',render:(r,u)=><DateCell value={r.created_date} onChange={v=>u({...r,created_date:v})}/>},{key:'resolved_date',label:'Resolved',render:(r,u)=><DateCell value={r.resolved_date} onChange={v=>u({...r,resolved_date:v})}/>},{key:'fix_deployed_date',label:'Deployed',render:r=>fmtDate(r.fix_deployed_date)},{key:'closed_date',label:'Closed',render:r=>fmtDate(r.closed_date)},{key:'recurrence_prevented',label:'Recur. Prev.',render:r=>r.recurrence_prevented?'✓':'—'},{key:'fix_release',label:'Fix Release'},{key:'related_incident_ids',label:'#Incidents',render:r=>splitIds(r.related_incident_ids).length}];
+const KBCols=()=>[{key:'kb_id',label:'ID'},{key:'title',label:'Title',render:r=>(r.title||'').slice(0,50)},{key:'article_type',label:'Type',filter:true},{key:'system_module',label:'Module',filter:true,render:r=>ml(r.system_module)},{key:'category',label:'Category',filter:true},{key:'subcategory',label:'Sub'},{key:'status',label:'Status',filter:true,render:r=><Badge v={r.status} cls={statClass(r.status)}/>},{key:'confidence_level',label:'Confidence',filter:true},{key:'effectiveness_score',label:'Eff.'},{key:'usage_count',label:'Usage'},{key:'version',label:'Ver.'},{key:'author',label:'Author'},{key:'last_updated_by',label:'Updated By'},{key:'created_date',label:'Created',render:r=>fmtDate(r.created_date)},{key:'last_updated',label:'Updated',render:(r,u)=><DateCell value={r.last_updated} onChange={v=>u({...r,last_updated:v})}/>},{key:'last_verified_date',label:'Verified',render:r=>fmtDate(r.last_verified_date)},{key:'source_incident_ids',label:'#Incidents',render:r=>splitIds(r.source_incident_ids).length},{key:'source_problem_ids',label:'#Problems',render:r=>splitIds(r.source_problem_ids).length}];
+const BugCols=()=>[{key:'bug_id',label:'ID'},{key:'bug_family_id',label:'Family'},{key:'title',label:'Title',render:r=>(r.title||'').slice(0,50)},{key:'bug_origin',label:'Origin',filter:true},{key:'system_module',label:'Module',filter:true,render:r=>ml(r.system_module)},{key:'category',label:'Category',filter:true},{key:'subcategory',label:'Sub'},{key:'severity',label:'Sev',filter:true,render:r=><Badge v={r.severity} cls={sevClass(r.severity)}/>},{key:'priority',label:'Pri',filter:true,render:r=><Badge v={r.priority} cls={priClass(r.priority)}/>},{key:'status',label:'Status',filter:true,render:(r,u)=><StatusCell value={r.status} options={['OPEN','IN_PROGRESS','FIXED','CLOSED','REOPENED']} onChange={v=>u({...r,status:v})}/>},{key:'primary_environment',label:'Env',filter:true},{key:'fix_environment',label:'Fix Env'},{key:'assigned_team',label:'Team',filter:true},{key:'assigned_to',label:'Assigned'},{key:'vendor_involved',label:'Vendor',render:r=>r.vendor_involved?'Yes':'No'},{key:'fix_version',label:'Fix Ver.'},{key:'target_release',label:'Target'},{key:'created_date',label:'Created',render:(r,u)=><DateCell value={r.created_date} onChange={v=>u({...r,created_date:v})}/>},{key:'fix_start_date',label:'Fix Start',render:r=>fmtDate(r.fix_start_date)},{key:'fix_complete_date',label:'Fix Done',render:r=>fmtDate(r.fix_complete_date)},{key:'fix_verified_date',label:'Verified',render:(r,u)=><DateCell value={r.fix_verified_date} onChange={v=>u({...r,fix_verified_date:v})}/>},{key:'closed_date',label:'Closed',render:r=>fmtDate(r.closed_date)},{key:'resolution_hours',label:'Hrs'},{key:'sla_met',label:'SLA',render:r=>r.sla_met?'✓':'✗'},{key:'primary_incident_id',label:'Incident'},{key:'primary_problem_id',label:'Problem'}];
+const TCCols=()=>[{key:'testcase_id',label:'ID'},{key:'title',label:'Title',render:r=>(r.title||'').slice(0,50)},{key:'test_type',label:'Type',filter:true},{key:'system_module',label:'Module',filter:true,render:r=>ml(r.system_module)},{key:'category',label:'Category',filter:true},{key:'subcategory',label:'Sub'},{key:'environment',label:'Env',filter:true},{key:'test_result',label:'Result',filter:true,render:(r,u)=><StatusCell value={r.test_result} options={['PASS','FAIL','BLOCKED','PENDING','NOT_RUN']} onChange={v=>u({...r,test_result:v})}/>},{key:'priority',label:'Pri',filter:true,render:r=><Badge v={r.priority} cls={priClass(r.priority)}/>},{key:'severity',label:'Sev',render:r=><Badge v={r.severity} cls={sevClass(r.severity)}/>},{key:'assigned_to',label:'Assigned'},{key:'automation_status',label:'Automation',filter:true},{key:'created_date',label:'Created',render:r=>fmtDate(r.created_date)},{key:'execution_date',label:'Executed',render:(r,u)=><DateCell value={r.execution_date} onChange={v=>u({...r,execution_date:v})}/>},{key:'completion_date',label:'Completed',render:r=>fmtDate(r.completion_date)},{key:'execution_duration_mins',label:'Dur (min)'},{key:'defects_found',label:'Defects'},{key:'source_bug_id',label:'Source Bug'},{key:'regression_scope',label:'Regr. Scope',render:r=>(r.regression_scope||'').slice(0,40)}];
+
+function IncidentsView(){return <div><h2 className="section-title">Incidents</h2><DataTable rows={D.incidents} cols={IncCols()}/></div>;}
+function ProblemsView(){return <div><h2 className="section-title">Problems</h2><DataTable rows={D.problems} cols={PrbCols()}/></div>;}
+function KBView(){const [sel,setSel]=useState(null);return <div><h2 className="section-title">Knowledge Base</h2>{sel&&<div className="callout"><div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}><div><h3 style={{margin:0}}>{sel.kb_id} — {sel.title}</h3><div style={{fontSize:12,marginTop:4}}>Contributed to {splitIds(sel.source_incident_ids).length} incidents & {splitIds(sel.source_problem_ids).length} problems</div></div><button onClick={()=>setSel(null)}>✕</button></div><div className="grid grid-2"><div><h3>Resolved Incidents</h3><div style={{maxHeight:220,overflow:'auto',fontSize:12}}>{splitIds(sel.source_incident_ids).slice(0,30).map(id=>{const i=D.incidents.find(x=>x.incident_id===id);return <div key={id} style={{padding:'3px 6px',borderBottom:'1px solid var(--border)'}}><strong>{id}</strong>{i?` — ${(i.title||'').slice(0,40)}`:''}</div>;})}</div></div><div><h3>Resolved Problems</h3><div style={{maxHeight:220,overflow:'auto',fontSize:12}}>{splitIds(sel.source_problem_ids).slice(0,30).map(id=>{const p=D.problems.find(x=>x.problem_id===id);return <div key={id} style={{padding:'3px 6px',borderBottom:'1px solid var(--border)'}}><strong>{id}</strong>{p?` — ${(p.title||'').slice(0,40)}`:''}</div>;})}</div></div></div></div>}<DataTable rows={D.kbs} cols={KBCols()} onRowClick={setSel}/></div>;}
+function BugsView(){const [sel,setSel]=useState(null);return <div><h2 className="section-title">Bugs</h2>{sel&&<div><div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}><button onClick={()=>setSel(null)}>✕ Close</button></div><ProcessFlow anchor={sel} anchorType="bug"/></div>}<DataTable rows={D.bugs} cols={BugCols()} onRowClick={setSel}/></div>;}
+function TestCasesView(){const [sel,setSel]=useState(null);return <div><h2 className="section-title">Test Cases</h2>{sel&&<div><div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}><button onClick={()=>setSel(null)}>✕ Close</button></div><ProcessFlow anchor={sel} anchorType="testcase"/></div>}<DataTable rows={D.testcases} cols={TCCols()} onRowClick={setSel}/></div>;}
+
+/* ===== MODULE HEALTH COMPUTATION ===== */
+/* Week helpers — W1 = 2026-01-01..2026-01-07, WN ends at Jan1+7N days */
+const YEAR_START=new Date('2026-01-01T00:00:00');
+const TODAY=new Date('2026-04-12T23:59:59');
+const CURRENT_WEEK=Math.min(52,Math.max(1,Math.ceil((TODAY-YEAR_START)/(7*86400000))));
+const weekEnd=n=>new Date(YEAR_START.getTime()+n*7*86400000-1);
+const weekStart=n=>new Date(YEAR_START.getTime()+(n-1)*7*86400000);
+const weekLabel=n=>{const s=weekStart(n),e=weekEnd(n);const f=d=>`${d.getMonth()+1}/${d.getDate()}`;return `W${String(n).padStart(2,'0')} — ${f(s)}–${f(e)}`;};
+const inYTW=(d,wk)=>{if(!d)return false;const t=new Date(d).getTime();return t>=YEAR_START.getTime()&&t<=weekEnd(wk).getTime();};
+
+const _mhCache={};
+function moduleHealth(week){
+  const wk=week||CURRENT_WEEK;
+  if(_mhCache[wk])return _mhCache[wk];
+  const res=_moduleHealthImpl(wk);
+  _mhCache[wk]=res;
+  return res;
+}
+function _moduleHealthImpl(wk){
+  if(!IDX.inc){IDX.inc=_byMod(D.incidents);IDX.prb=_byMod(D.problems);IDX.bug=_byMod(D.bugs);IDX.tc=_byMod(D.testcases);}
+  return MODULES.map(m=>{
+    const inc=IDX.inc[m].filter(i=>inYTW(i.created_date,wk));
+    const openInc=inc.filter(i=>!['RESOLVED','CLOSED'].includes(i.status)||!inYTW(i.resolved_date,wk));
+    const critInc=inc.filter(i=>['S1_CRITICAL','S2_HIGH'].includes(i.severity));
+    const prb=IDX.prb[m].filter(p=>inYTW(p.created_date,wk));
+    const openPrb=prb.filter(p=>!['RESOLVED','CLOSED'].includes(p.status)||!inYTW(p.resolved_date,wk));
+    const bugs=IDX.bug[m].filter(b=>inYTW(b.created_date,wk));
+    const fixedBugs=bugs.filter(b=>['FIXED','CLOSED'].includes(b.status)&&inYTW(b.fix_verified_date||b.closed_date,wk));
+    const tcs=IDX.tc[m].filter(t=>inYTW(t.created_date,wk));
+    const execTc=tcs.filter(t=>inYTW(t.execution_date,wk));
+    const passedTc=execTc.filter(t=>t.test_result==='PASS');
+    const failedTc=execTc.filter(t=>t.test_result==='FAIL');
+    const incScore=inc.length===0?100:Math.max(0,100-openInc.length*4-critInc.length*3);
+    const bugScore=bugs.length===0?100:Math.round(fixedBugs.length/bugs.length*100);
+    const tcScore=(passedTc.length+failedTc.length)===0?100:Math.round(passedTc.length/(passedTc.length+failedTc.length)*100);
+    const prbScore=prb.length===0?100:Math.max(0,100-openPrb.length*8);
+    const actual=Math.round((incScore*0.3+bugScore*0.3+tcScore*0.3+prbScore*0.1));
+    const target=90;
+    return {module:m,label:ml(m),incidents:inc.length,openInc:openInc.length,critical:critInc.length,problems:prb.length,openPrb:openPrb.length,bugs:bugs.length,fixedBugs:fixedBugs.length,testcases:tcs.length,passedTc:passedTc.length,failedTc:failedTc.length,incScore,bugScore,tcScore,prbScore,actual,target,gap:actual-target};
+  });
+}
+
+function WeekSelector({week,setWeek}){
+  const weeks=[];for(let i=1;i<=CURRENT_WEEK;i++)weeks.push(i);
+  return <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'var(--bg-secondary)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',marginBottom:'var(--space-lg)',flexWrap:'wrap'}}>
+    <button onClick={()=>setWeek(Math.max(1,week-1))} disabled={week<=1} style={{padding:'6px 10px',border:'1px solid var(--border)',background:'var(--bg-card)',borderRadius:6,cursor:'pointer'}}>◀</button>
+    <div style={{fontWeight:600,fontSize:13,minWidth:200}}>{weekLabel(week)}</div>
+    <button onClick={()=>setWeek(Math.min(CURRENT_WEEK,week+1))} disabled={week>=CURRENT_WEEK} style={{padding:'6px 10px',border:'1px solid var(--border)',background:'var(--bg-card)',borderRadius:6,cursor:'pointer'}}>▶</button>
+    <div style={{display:'flex',gap:4,overflowX:'auto',flex:1}}>{weeks.map(n=><button key={n} onClick={()=>setWeek(n)} style={{padding:'5px 12px',borderRadius:999,border:'1px solid var(--border)',background:n===week?'var(--accent-primary)':'transparent',color:n===week?'#fff':'var(--text-secondary)',cursor:'pointer',fontSize:12,fontWeight:500,whiteSpace:'nowrap',flexShrink:0}}>W{String(n).padStart(2,'0')}</button>)}</div>
+    <span style={{fontSize:11,color:'var(--text-muted)'}}>Year-to-Week view</span>
+  </div>;
+}
+
+function ProjectHealthDashboard(){
+  const [week,setWeek]=useState(CURRENT_WEEK);
+  const mh=useMemo(()=>moduleHealth(week),[week]);
+  const overall=Math.round(mh.reduce((s,m)=>s+m.actual,0)/mh.length);
+  const target=90;const gap=overall-target;
+  const green=mh.filter(m=>m.actual>=80).length;
+  const amber=mh.filter(m=>m.actual>=60&&!(m.actual>=80)).length;
+  const red=mh.filter(m=>!(m.actual>=60)).length;
+  const weakest=[...mh].sort((a,b)=>a.actual-b.actual).slice(0,3).map(m=>m.label).join(', ');
+  const strongest=[...mh].sort((a,b)=>b.actual-a.actual).slice(0,3).map(m=>m.label).join(', ');
+  const [trend,setTrend]=useState([]);
+  const [computing,setComputing]=useState(false);
+  useEffect(()=>{
+    setComputing(true);
+    // Defer heavy computation to next tick so UI can render first
+    const t=setTimeout(()=>{
+      const YEAR_WEEKS=52,PROJ_AHEAD=4;
+      const arr=[];
+      const actuals=[];
+      for(let w=1;w<=week;w++){const mh2=moduleHealth(w);actuals.push(Math.round(mh2.reduce((s,m)=>s+m.actual,0)/mh2.length));}
+      const n=Math.min(4,actuals.length);
+      let slope=0;
+      if(n>=2){const recent=actuals.slice(-n);slope=(recent[recent.length-1]-recent[0])/(n-1);}
+      const lastActual=actuals[actuals.length-1]||0;
+      for(let w=1;w<=YEAR_WEEKS;w++){
+        const row={week:`W${String(w).padStart(2,'0')}`,target:90};
+        if(w<=week)row.actual=actuals[w-1];
+        if(w>=week&&w<=Math.min(YEAR_WEEKS,week+PROJ_AHEAD)){
+          const offset=w-week;
+          row.projection=Math.max(0,Math.min(100,Math.round(lastActual+slope*offset)));
+        }
+        arr.push(row);
+      }
+      setTrend(arr);setComputing(false);
+    },10);
+    return ()=>clearTimeout(t);
+  },[week]);
+  return <div>
+    <h2 className="section-title">Project Health Dashboard — eMPF</h2>
+    <WeekSelector week={week} setWeek={setWeek}/>
+    <div className="grid grid-4" style={{marginBottom:'var(--space-lg)'}}>
+      <div className="card kpi-card"><div className="kpi-value" style={{color:ragColor(overall)}}>{overall}%</div><div className="kpi-label">Actual Health</div><div className="kpi-sub">Target: {target}%</div></div>
+      <div className="card kpi-card"><div className="kpi-value" style={{color:gap>=0?'var(--accent-success)':'var(--accent-danger)'}}>{gap>=0?'+':''}{gap}pp</div><div className="kpi-label">Gap vs Target</div></div>
+      <div className="card kpi-card"><div className="kpi-value">{green}/{amber}/{red}</div><div className="kpi-label">Modules G / A / R</div></div>
+      <div className="card kpi-card"><div className="kpi-value">{MODULES.length}</div><div className="kpi-label">Total Modules</div></div>
+    </div>
+    <div className="callout" style={{marginTop:0,marginBottom:'var(--space-lg)'}}><h3>💡 Executive Summary — As of {weekLabel(week)}</h3><ul><li><strong>Overall project health {overall}%</strong> — {gap>=0?`meeting target by ${gap}pp`:`below target by ${-gap}pp`}.</li><li><strong>{green}</strong> modules GREEN (≥80), <strong>{amber}</strong> AMBER (60–79), <strong>{red}</strong> RED (below 60).</li><li>Weakest modules: <strong>{weakest}</strong> — prioritise QA remediation.</li><li>Strongest: <strong>{strongest}</strong>.</li></ul></div>
+    <div className="card" style={{marginBottom:'var(--space-lg)'}}><h3>Readiness Trend — Actual vs Target (Full Year, As of {weekLabel(week)}) {computing&&<span style={{fontSize:11,color:'var(--accent-warning)',fontWeight:400,marginLeft:8}}>⏳ computing…</span>}</h3><ResponsiveContainer width="100%" height={320}><LineChart data={trend} margin={{top:10,right:30,left:0,bottom:0}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="week" style={{fontSize:10}} interval={3}/><YAxis domain={[0,100]} style={{fontSize:10}} tickFormatter={v=>v+'%'}/><Tooltip formatter={v=>v==null?'—':v+'%'}/><Legend/><Line type="monotone" dataKey="target" stroke={COLORS[2]} strokeWidth={2} strokeDasharray="6 4" dot={false} name="Target 90%"/><Line type="monotone" dataKey="actual" stroke={COLORS[0]} strokeWidth={3} dot={{r:3}} name="Actual" connectNulls={false}/><Line type="monotone" dataKey="projection" stroke={COLORS[1]} strokeWidth={2} strokeDasharray="2 3" dot={false} name="Projection (next 4w)" connectNulls={true}/></LineChart></ResponsiveContainer></div>
+    <div className="grid grid-2">
+      <div className="card"><h3>Actual vs Target Health by Module</h3><ResponsiveContainer width="100%" height={420}><BarChart data={mh} layout="vertical" margin={{left:20}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis type="number" domain={[0,100]} style={{fontSize:10}}/><YAxis type="category" dataKey="label" width={170} style={{fontSize:10}}/><Tooltip/><Legend/><Bar dataKey="target" fill="#d0d7de" name="Target"/><Bar dataKey="actual" fill={COLORS[0]} name="Actual"/></BarChart></ResponsiveContainer></div>
+      <div className="card"><h3>Module Health Scorecard</h3><div style={{maxHeight:420,overflow:'auto'}}>{[...mh].sort((a,b)=>a.actual-b.actual).map(m=><div key={m.module} className="mod-health-row"><div className="mod-name">{m.label}</div><div><span className={`rag rag-${ragClass(m.actual)}`}></span>{m.actual}</div><div><div className="progress-bar"><div className="progress-fill" style={{width:`${m.actual}%`,background:ragColor(m.actual)}}></div></div></div><div style={{fontSize:11,color:'var(--text-muted)'}}>Tgt {m.target}</div><div style={{fontSize:11,color:m.gap>=0?'var(--accent-success)':'var(--accent-danger)',fontWeight:600}}>{m.gap>=0?'+':''}{m.gap}</div></div>)}</div></div>
+    </div>
+    <div className="subsection"><h3>Sub-score Breakdown by Module (Incident / Bug Fix / Retest / Problem)</h3><div className="card"><ResponsiveContainer width="100%" height={340}><BarChart data={mh}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="label" angle={-40} textAnchor="end" height={130} style={{fontSize:10}}/><YAxis domain={[0,100]} style={{fontSize:10}}/><Tooltip/><Legend/><Bar dataKey="incScore" fill={COLORS[0]} name="Incident"/><Bar dataKey="bugScore" fill={COLORS[2]} name="Bug Fix"/><Bar dataKey="tcScore" fill={COLORS[3]} name="Retest"/><Bar dataKey="prbScore" fill={COLORS[5]} name="Problem"/></BarChart></ResponsiveContainer></div></div>
+  </div>;
+}
+
+function ModuleQAReport(){
+  const [mod,setMod]=useState(MODULES[0]);
+  const mh=moduleHealth().find(m=>m.module===mod);
+  const inc=D.incidents.filter(i=>i.system_module===mod);
+  const bugs=D.bugs.filter(b=>b.system_module===mod);
+  const tcs=D.testcases.filter(t=>t.system_module===mod);
+  const incTrend={};inc.forEach(i=>{const m=monthOf(i.created_date);if(m){incTrend[m]=incTrend[m]||{month:m,created:0,resolved:0};incTrend[m].created++;}});inc.forEach(i=>{const m=monthOf(i.resolved_date);if(m){incTrend[m]=incTrend[m]||{month:m,created:0,resolved:0};incTrend[m].resolved++;}});
+  const trendData=Object.values(incTrend).sort((a,b)=>a.month.localeCompare(b.month)).slice(-12);
+  const tcRes={};tcs.forEach(t=>{tcRes[t.test_result||'NOT_RUN']=(tcRes[t.test_result||'NOT_RUN']||0)+1;});
+  const tcResData=Object.entries(tcRes).map(([name,value])=>({name,value}));
+  const bugStat={};bugs.forEach(b=>{bugStat[b.status||'?']=(bugStat[b.status||'?']||0)+1;});
+  const bugStatData=Object.entries(bugStat).map(([name,value])=>({name,value}));
+  return <div>
+    <h2 className="section-title">Module QA Report</h2>
+    <div style={{marginBottom:16}}><strong>Module:</strong> <select value={mod} onChange={e=>setMod(e.target.value)} style={{padding:'6px 12px',marginLeft:8,border:'1px solid var(--border)',borderRadius:6,background:'var(--bg-card)',color:'var(--text-primary)'}}>{MODULES.map(m=><option key={m} value={m}>{ml(m)}</option>)}</select></div>
+    {mh&&<>
+      <div className="grid grid-4" style={{marginBottom:16}}>
+        <div className="card kpi-card"><div className="kpi-value" style={{color:ragColor(mh.actual)}}>{mh.actual}%</div><div className="kpi-label">Health</div><div className="kpi-sub"><span className={`rag rag-${ragClass(mh.actual)}`}></span>Target {mh.target}%</div></div>
+        <div className="card kpi-card"><div className="kpi-value">{mh.incidents}</div><div className="kpi-label">Incidents</div><div className="kpi-sub">{mh.openInc} open · {mh.critical} crit</div></div>
+        <div className="card kpi-card"><div className="kpi-value">{mh.bugs}</div><div className="kpi-label">Bugs</div><div className="kpi-sub">{mh.fixedBugs} fixed ({mh.bugScore}%)</div></div>
+        <div className="card kpi-card"><div className="kpi-value">{mh.testcases}</div><div className="kpi-label">Test Cases</div><div className="kpi-sub">Pass rate {mh.tcScore}%</div></div>
+      </div>
+      <div className="subsection"><h3>Sub-Score Progress</h3><div className="card">{[['Incident Mgmt',mh.incScore],['Bug Fix Progress',mh.bugScore],['Retest Pass Rate',mh.tcScore],['Problem Control',mh.prbScore]].map(([l,v])=><div key={l} style={{marginBottom:14}}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}}><span>{l}</span><strong>{v}%</strong></div><div className="progress-bar" style={{height:10}}><div className="progress-fill" style={{width:`${v}%`,background:ragColor(v)}}></div></div></div>)}</div></div>
+      <div className="grid grid-2">
+        <div className="card"><h3>Incident Trend</h3><ResponsiveContainer width="100%" height={260}><AreaChart data={trendData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Area type="monotone" dataKey="created" stroke={COLORS[4]} fill={COLORS[4]} fillOpacity={.3}/><Area type="monotone" dataKey="resolved" stroke={COLORS[2]} fill={COLORS[2]} fillOpacity={.3}/></AreaChart></ResponsiveContainer></div>
+        <div className="card"><h3>Test Case Results</h3><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={tcResData} dataKey="value" nameKey="name" outerRadius={85} label>{tcResData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div>
+        <div className="card"><h3>Bug Status</h3><ResponsiveContainer width="100%" height={260}><BarChart data={bugStatData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="name" style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Bar dataKey="value" fill={COLORS[0]}/></BarChart></ResponsiveContainer></div>
+        <div className="card"><h3>QA Scope Summary</h3><table><tbody><tr><td>Functional Tests</td><td>{tcs.filter(t=>t.test_type==='FUNCTIONAL'||t.category==='FUNCTIONAL').length}</td></tr><tr><td>Regression Tests</td><td>{tcs.filter(t=>t.test_type==='REGRESSION').length}</td></tr><tr><td>Verification Tests</td><td>{tcs.filter(t=>t.test_type==='VERIFICATION').length}</td></tr><tr><td>Automated</td><td>{tcs.filter(t=>t.automation_status==='AUTOMATED'||t.automation_status==='SEMI_AUTOMATED').length}</td></tr><tr><td>Manual</td><td>{tcs.filter(t=>t.automation_status==='MANUAL').length}</td></tr></tbody></table></div>
+      </div>
+    </>}
+  </div>;
+}
+
+function IPAnalytics(){
+  const now=new Date();const ageDays=d=>d?Math.max(0,Math.round((now-new Date(d))/86400000)):0;
+  const openInc=D.incidents.filter(i=>!['RESOLVED','CLOSED'].includes(i.status));const openPrb=D.problems.filter(p=>!['RESOLVED','CLOSED'].includes(p.status));
+  const buckets=[{l:'0-7d',mx:7},{l:'8-30d',mx:30},{l:'31-90d',mx:90},{l:'91-180d',mx:180},{l:'>180d',mx:99999}];
+  const aging=buckets.map(b=>({name:b.l,incidents:0,problems:0}));openInc.forEach(i=>{const a=ageDays(i.created_date);const bi=buckets.findIndex(b=>a<=b.mx);if(bi>=0)aging[bi].incidents++;});openPrb.forEach(p=>{const a=ageDays(p.created_date);const bi=buckets.findIndex(b=>a<=b.mx);if(bi>=0)aging[bi].problems++;});
+  const pri=['P1','P2','P3','P4'];const priData=pri.map(p=>({name:p,incidents:D.incidents.filter(i=>i.priority===p).length,problems:D.problems.filter(x=>x.priority===p).length}));
+  const sevs={};D.incidents.forEach(i=>{if(i.severity)sevs[i.severity]=(sevs[i.severity]||0)+1;});const sevData=Object.entries(sevs).map(([name,value])=>({name,value}));
+  const modData=MODULES.map(m=>({name:ml(m),value:D.incidents.filter(i=>i.system_module===m).length})).sort((a,b)=>b.value-a.value);
+  const byMonth={};D.incidents.forEach(i=>{const m=monthOf(i.created_date);if(m){byMonth[m]=byMonth[m]||{month:m,created:0,resolved:0};byMonth[m].created++;}});D.incidents.forEach(i=>{const m=monthOf(i.resolved_date);if(m){byMonth[m]=byMonth[m]||{month:m,created:0,resolved:0};byMonth[m].resolved++;}});const trendData=Object.values(byMonth).sort((a,b)=>a.month.localeCompare(b.month)).slice(-18);
+  return <div><h2 className="section-title">Incident & Problem Analytics</h2><div className="grid grid-4" style={{marginBottom:16}}><div className="card kpi-card"><div className="kpi-value">{D.incidents.length}</div><div className="kpi-label">Total Incidents</div></div><div className="card kpi-card"><div className="kpi-value">{openInc.length}</div><div className="kpi-label">Open</div></div><div className="card kpi-card"><div className="kpi-value">{D.problems.length}</div><div className="kpi-label">Problems</div></div><div className="card kpi-card"><div className="kpi-value">{openPrb.length}</div><div className="kpi-label">Open Problems</div></div></div><div className="grid grid-2"><div className="card"><h3>Aging (Open)</h3><ResponsiveContainer width="100%" height={260}><BarChart data={aging}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="name" style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Bar dataKey="incidents" fill={COLORS[0]}/><Bar dataKey="problems" fill={COLORS[3]}/></BarChart></ResponsiveContainer></div><div className="card"><h3>Priority</h3><ResponsiveContainer width="100%" height={260}><BarChart data={priData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="name"/><YAxis/><Tooltip/><Legend/><Bar dataKey="incidents" fill={COLORS[1]}/><Bar dataKey="problems" fill={COLORS[2]}/></BarChart></ResponsiveContainer></div><div className="card"><h3>Severity</h3><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={sevData} dataKey="value" nameKey="name" outerRadius={85} label>{sevData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div><div className="card"><h3>Incidents by Module</h3><ResponsiveContainer width="100%" height={300}><BarChart data={modData} layout="vertical" margin={{left:20}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis type="number" style={{fontSize:10}}/><YAxis type="category" dataKey="name" width={170} style={{fontSize:10}}/><Tooltip/><Bar dataKey="value" fill={COLORS[0]}/></BarChart></ResponsiveContainer></div></div><div className="card" style={{marginTop:16}}><h3>Monthly: Created vs Resolved</h3><ResponsiveContainer width="100%" height={280}><AreaChart data={trendData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Area type="monotone" dataKey="created" stroke={COLORS[4]} fill={COLORS[4]} fillOpacity={.3}/><Area type="monotone" dataKey="resolved" stroke={COLORS[2]} fill={COLORS[2]} fillOpacity={.3}/></AreaChart></ResponsiveContainer></div></div>;
+}
+
+const BUG_FLOW=['OPEN','IN_PROGRESS','FIXED','CLOSED','REOPENED'];const TC_FLOW=['NOT_RUN','PENDING','PASS','FAIL','BLOCKED'];
+function sprints(items,key){const set=new Set();items.forEach(i=>{const m=monthOf(i[key]);if(m)set.add(m);});return [...set].sort().reverse();}
+function Kanban({items,flow,titleKey,idKey,dateKey,statusKey,onClick}){const sp=sprints(items,dateKey);const [sprint,setSprint]=useState(sp[0]||'');useEffect(()=>{if(!sprint&&sp.length)setSprint(sp[0]);},[sp.length]);const inSprint=items.filter(i=>monthOf(i[dateKey])===sprint);return <div><div className="sprint-sel"><strong>Sprint:</strong>{sp.slice(0,10).map(s=><button key={s} className={s===sprint?'active':''} onClick={()=>setSprint(s)}>{s}</button>)}<span style={{marginLeft:12,color:'var(--text-secondary)',fontSize:12}}>{inSprint.length} items</span></div><div className="kanban">{flow.map(st=>{const col=inSprint.filter(i=>(i[statusKey]||'').toUpperCase()===st);return <div key={st} className="kcol"><h4>{st}<span className="cnt">{col.length}</span></h4>{col.slice(0,50).map(it=><div key={it[idKey]} className="kitem" onClick={()=>onClick(it)}><div className="kid">{it[idKey]}</div><div className="ktit">{(it[titleKey]||'').slice(0,60)}</div><div style={{fontSize:10,color:'var(--text-secondary)',display:'flex',gap:6,flexWrap:'wrap'}}><Badge v={it.priority} cls={priClass(it.priority)}/><Badge v={it.severity} cls={sevClass(it.severity)}/><span>{ml(it.system_module)}</span></div></div>)}</div>;})}</div></div>;}
+function BugKanban(){const [sel,setSel]=useState(null);return <div><h2 className="section-title">Bug Kanban — 1 Month = 1 Sprint</h2>{sel&&<div><div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}><button onClick={()=>setSel(null)}>✕ Close</button></div><ProcessFlow anchor={sel} anchorType="bug"/></div>}<Kanban items={D.bugs} flow={BUG_FLOW} titleKey="title" idKey="bug_id" dateKey="created_date" statusKey="status" onClick={setSel}/></div>;}
+function TCKanban(){const [sel,setSel]=useState(null);return <div><h2 className="section-title">Test Case Kanban</h2>{sel&&<div><div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}><button onClick={()=>setSel(null)}>✕ Close</button></div><ProcessFlow anchor={sel} anchorType="testcase"/></div>}<Kanban items={D.testcases} flow={TC_FLOW} titleKey="title" idKey="testcase_id" dateKey="created_date" statusKey="test_result" onClick={setSel}/></div>;}
+
+function BugRetestDashboard(){
+  const bugStat={};D.bugs.forEach(b=>{bugStat[b.status||'?']=(bugStat[b.status||'?']||0)+1;});const bugStatData=Object.entries(bugStat).map(([name,value])=>({name,value}));
+  const bySprint={};D.bugs.forEach(b=>{const m=monthOf(b.created_date);if(m){bySprint[m]=bySprint[m]||{sprint:m,created:0,closed:0};bySprint[m].created++;}});D.bugs.forEach(b=>{const m=monthOf(b.closed_date);if(m){bySprint[m]=bySprint[m]||{sprint:m,created:0,closed:0};bySprint[m].closed++;}});const sprintData=Object.values(bySprint).sort((a,b)=>a.sprint.localeCompare(b.sprint)).slice(-12);
+  const pr={};D.testcases.forEach(t=>{const m=monthOf(t.execution_date);if(!m)return;pr[m]=pr[m]||{month:m,pass:0,fail:0,total:0};pr[m].total++;if(t.test_result==='PASS')pr[m].pass++;if(t.test_result==='FAIL')pr[m].fail++;});const prData=Object.values(pr).map(r=>({month:r.month,passRate:r.total?Math.round(r.pass/r.total*100):0,fail:r.fail})).sort((a,b)=>a.month.localeCompare(b.month)).slice(-12);
+  const passed=D.testcases.filter(t=>t.test_result==='PASS').length;const failed=D.testcases.filter(t=>t.test_result==='FAIL').length;const fixed=D.bugs.filter(b=>['FIXED','CLOSED'].includes(b.status)).length;
+  return <div><h2 className="section-title">Bug Fix & Retest Dashboard</h2><div className="grid grid-4" style={{marginBottom:16}}><div className="card kpi-card"><div className="kpi-value">{D.bugs.length}</div><div className="kpi-label">Total Bugs</div></div><div className="card kpi-card"><div className="kpi-value">{fixed}</div><div className="kpi-label">Fixed/Closed</div><div className="kpi-sub">{Math.round(fixed/Math.max(1,D.bugs.length)*100)}% fix rate</div></div><div className="card kpi-card"><div className="kpi-value">{D.testcases.length}</div><div className="kpi-label">Test Cases</div></div><div className="card kpi-card"><div className="kpi-value">{Math.round(passed/Math.max(1,passed+failed)*100)}%</div><div className="kpi-label">Retest Pass Rate</div></div></div><div className="grid grid-2"><div className="card"><h3>Bug Status</h3><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={bugStatData} dataKey="value" nameKey="name" outerRadius={85} label>{bugStatData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div><div className="card"><h3>Sprint Burndown</h3><ResponsiveContainer width="100%" height={260}><BarChart data={sprintData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="sprint" style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Bar dataKey="created" fill={COLORS[4]}/><Bar dataKey="closed" fill={COLORS[2]}/></BarChart></ResponsiveContainer></div></div><div className="card" style={{marginTop:16}}><h3>Retest Pass Rate Trend</h3><ResponsiveContainer width="100%" height={280}><LineChart data={prData}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:10}}/><YAxis domain={[0,100]} style={{fontSize:10}}/><Tooltip/><Legend/><Line type="monotone" dataKey="passRate" stroke={COLORS[2]} strokeWidth={3}/><Line type="monotone" dataKey="fail" stroke={COLORS[4]} strokeWidth={2}/></LineChart></ResponsiveContainer></div></div>;
+}
+
+/* ===========================================================================
+   BUSINESS DASHBOARD — eMPF Executive View
+   Lifecycle: Onboarding → Enrolment → Contribution → Payment → Investment
+              → Account Mgmt → Claims → Compliance → Termination
+   =========================================================================== */
+const BIZ=window.__BIZ_DATA__||{employers:[],members:[],schemes:[],funds:[],contributions:[],fund_transactions:[],account_transfers:[],claims:[],compliance_cases:[],daily_aum_snapshots:[]};
+const fmtHKD=v=>!v||isNaN(v)?'HK$0':v>=1e9?`HK$${(v/1e9).toFixed(2)}B`:v>=1e6?`HK$${(v/1e6).toFixed(1)}M`:v>=1e3?`HK$${(v/1e3).toFixed(1)}K`:`HK$${Math.round(v).toLocaleString()}`;
+const num=v=>{const n=parseFloat(v);return isNaN(n)?0:n;};
+const pct=(a,b)=>!b?0:Math.round(a/b*1000)/10;
+const ymOf=d=>!d?null:String(d).slice(0,7);
+
+function BizExecDashboard(){
+  const k=useMemo(()=>{
+    // ===== Top KPIs =====
+    const totalAUM=BIZ.funds.reduce((s,f)=>s+num(f.aum_hkm)*1e6,0);
+    const totalMembers=BIZ.members.length;
+    const activeMembers=BIZ.members.filter(m=>m.status==='ACTIVE').length;
+    const totalEmployers=BIZ.employers.length;
+    const activeEmployers=BIZ.employers.filter(e=>e.status==='ACTIVE').length;
+    // Contributions YTD
+    const totMandatory=BIZ.contributions.reduce((s,c)=>s+num(c.employer_mandatory_amount)+num(c.employee_mandatory_amount),0);
+    const totVoluntary=BIZ.contributions.reduce((s,c)=>s+num(c.employer_voluntary_amount)+num(c.employee_voluntary_amount),0);
+    const totTVC=BIZ.contributions.reduce((s,c)=>s+num(c.tvc_amount),0);
+    // On-time payment
+    const onTime=BIZ.contributions.filter(c=>c.is_on_time==='true'||c.is_on_time===true||c.status==='ON_TIME').length;
+    const ontimeRate=pct(onTime,BIZ.contributions.length);
+    // Outstanding
+    const outstanding=BIZ.contributions.filter(c=>['DEFAULT_LATE','DEFAULT_UNPAID','DEFAULT_UNDERPAID','REJECTED'].includes(c.status)).reduce((s,c)=>s+num(c.total_contribution),0);
+    // DIS adoption
+    const disMembers=BIZ.members.filter(m=>m.uses_dis==='true'||m.uses_dis===true).length;
+    const disPct=pct(disMembers,BIZ.members.length);
+    // Claims
+    const paidClaims=BIZ.claims.filter(c=>c.status==='PAID');
+    const totalPayouts=paidClaims.reduce((s,c)=>s+num(c.amount_paid),0);
+    const slaMet=BIZ.claims.filter(c=>c.sla_met==='true'||c.sla_met===true).length;
+    const slaRate=pct(slaMet,BIZ.claims.length);
+    // Compliance
+    const openCompliance=BIZ.compliance_cases.filter(c=>c.status==='OPEN'||c.status==='ESCALATED').length;
+    const totalSurcharge=BIZ.compliance_cases.reduce((s,c)=>s+num(c.surcharge_amount),0);
+    return {totalAUM,totalMembers,activeMembers,totalEmployers,activeEmployers,totMandatory,totVoluntary,totTVC,ontimeRate,outstanding,disMembers,disPct,paidClaims:paidClaims.length,totalPayouts,slaRate,openCompliance,totalSurcharge};
+  },[]);
+
+  // ===== Contribution trend by month =====
+  const contribTrend=useMemo(()=>{
+    const m={};
+    BIZ.contributions.forEach(c=>{
+      const k=c.contribution_period;if(!k)return;
+      m[k]=m[k]||{month:k,mandatory:0,voluntary:0,tvc:0,total:0,count:0,onTime:0};
+      m[k].mandatory+=num(c.employer_mandatory_amount)+num(c.employee_mandatory_amount);
+      m[k].voluntary+=num(c.employer_voluntary_amount)+num(c.employee_voluntary_amount);
+      m[k].tvc+=num(c.tvc_amount);
+      m[k].total+=num(c.total_contribution);
+      m[k].count++;
+      if(c.is_on_time==='true'||c.is_on_time===true||c.status==='ON_TIME')m[k].onTime++;
+    });
+    return Object.values(m).sort((a,b)=>a.month.localeCompare(b.month)).map(r=>({...r,mandatory:Math.round(r.mandatory),voluntary:Math.round(r.voluntary),tvc:Math.round(r.tvc),total:Math.round(r.total),onTimePct:pct(r.onTime,r.count)}));
+  },[]);
+
+  // ===== AUM growth =====
+  const aumTrend=useMemo(()=>{
+    const m={};
+    BIZ.daily_aum_snapshots.forEach(s=>{
+      const k=String(s.snapshot_date).slice(0,7);if(!k)return;
+      m[k]=m[k]||{month:k,aum:0,n:0,inflow:0};
+      m[k].aum+=num(s.total_aum_hkd);m[k].n++;m[k].inflow+=num(s.net_inflow_hkd);
+    });
+    return Object.values(m).sort((a,b)=>a.month.localeCompare(b.month)).map(r=>({month:r.month,aum:Math.round(r.aum/r.n),inflow:Math.round(r.inflow)}));
+  },[]);
+
+  // ===== Compliance heatmap by industry =====
+  const industryComp=useMemo(()=>{
+    const m={};
+    BIZ.employers.forEach(e=>{
+      const i=e.industry||'OTHER';
+      m[i]=m[i]||{industry:i,green:0,amber:0,red:0,total:0};
+      m[i].total++;
+      if(e.compliance_rating==='GREEN')m[i].green++;
+      else if(e.compliance_rating==='AMBER')m[i].amber++;
+      else if(e.compliance_rating==='RED')m[i].red++;
+    });
+    return Object.values(m).sort((a,b)=>b.total-a.total);
+  },[]);
+
+  // ===== Claim mix =====
+  const claimMix=useMemo(()=>{
+    const m={};
+    BIZ.claims.forEach(c=>{m[c.claim_type]=(m[c.claim_type]||0)+1;});
+    return Object.entries(m).map(([name,value])=>({name:name.replace(/_/g,' '),value})).sort((a,b)=>b.value-a.value);
+  },[]);
+
+  // ===== Fund category mix =====
+  const fundMix=useMemo(()=>{
+    const m={};
+    BIZ.funds.forEach(f=>{const k=f.fund_type||'OTHER';m[k]=(m[k]||0)+num(f.aum_hkm);});
+    return Object.entries(m).map(([name,value])=>({name:name.replace(/_/g,' '),value:Math.round(value)})).sort((a,b)=>b.value-a.value);
+  },[]);
+
+  // ===== Lifecycle health (9 stages) =====
+  const lifecycle=useMemo(()=>{
+    const stages=[
+      {key:'ONBOARDING',label:'Onboarding',
+        score:Math.round(pct(BIZ.employers.filter(e=>e.api_integrated==='true'||e.api_integrated===true).length,BIZ.employers.length)+30),
+        target:80,
+        detail:`${BIZ.employers.filter(e=>e.api_integrated==='true'||e.api_integrated===true).length} of ${BIZ.employers.length} employers API-integrated`,
+        metric:'API Integration Rate'},
+      {key:'ENROLMENT',label:'Enrolment',
+        score:Math.round(pct(BIZ.members.filter(m=>m.enrollment_compliant==='true'||m.enrollment_compliant===true).length,BIZ.members.length)),
+        target:95,
+        detail:`${BIZ.members.filter(m=>m.enrollment_compliant==='true'||m.enrollment_compliant===true).length} of ${BIZ.members.length} members enrolled within the 60-day rule`,
+        metric:'On-time Enrolment %'},
+      {key:'CONTRIBUTION',label:'Contribution',
+        score:Math.min(100,Math.round(k.ontimeRate)),
+        target:97,
+        detail:`${k.ontimeRate}% of contributions submitted on time; outstanding ${fmtHKD(k.outstanding)}`,
+        metric:'On-time Submission Rate'},
+      {key:'PAYMENT',label:'Payment',
+        score:Math.min(100,Math.round(k.ontimeRate)),
+        target:97,
+        detail:`${k.ontimeRate}% payments settled by contribution day; ${fmtHKD(k.outstanding)} in default`,
+        metric:'On-time Payment Rate'},
+      {key:'INVESTMENT',label:'Investment',
+        score:Math.round(BIZ.funds.reduce((s,f)=>s+num(f.ytd_return_pct),0)/Math.max(1,BIZ.funds.length)*8+50),
+        target:80,
+        detail:`Avg YTD return ${(BIZ.funds.reduce((s,f)=>s+num(f.ytd_return_pct),0)/Math.max(1,BIZ.funds.length)).toFixed(1)}% across ${BIZ.funds.length} funds; ${k.disPct}% DIS adoption`,
+        metric:'Weighted Fund Performance'},
+      {key:'ACCOUNT_MGMT',label:'Account Mgmt',
+        score:Math.round(pct(BIZ.account_transfers.filter(t=>t.status==='COMPLETED').length,BIZ.account_transfers.length)),
+        target:90,
+        detail:`${BIZ.account_transfers.filter(t=>t.status==='COMPLETED').length} of ${BIZ.account_transfers.length} ECA / consolidation transfers completed`,
+        metric:'Transfer Completion Rate'},
+      {key:'CLAIMS',label:'Claims',
+        score:Math.round(k.slaRate),
+        target:90,
+        detail:`${k.slaRate}% of claims met 30-day SLA; ${k.paidClaims} paid totalling ${fmtHKD(k.totalPayouts)}`,
+        metric:'30-day SLA Adherence'},
+      {key:'COMPLIANCE',label:'Compliance',
+        score:Math.round(Math.max(0,100-k.openCompliance/Math.max(1,BIZ.compliance_cases.length)*100)),
+        target:85,
+        detail:`${k.openCompliance} open of ${BIZ.compliance_cases.length} total cases; surcharges ${fmtHKD(k.totalSurcharge)}`,
+        metric:'Closed-case Rate'},
+      {key:'TERMINATION',label:'Termination',
+        score:85,
+        target:85,
+        detail:`Offboarding flows for terminated employees — auto-transfer after 3-month inaction rule`,
+        metric:'Offboarding Compliance'},
+    ];
+    return stages.map(s=>({...s,score:Math.max(0,Math.min(100,s.score)),rag:s.score>=80?'green':s.score>=60?'amber':'red',gap:s.score-s.target}));
+  },[k]);
+
+  const overallScore=Math.round(lifecycle.reduce((s,x)=>s+x.score,0)/lifecycle.length);
+
+  const COLOR={green:'var(--accent-success)',amber:'var(--accent-warning)',red:'var(--accent-danger)'};
+
+  return <div>
+    <h2 className="section-title">Business Executive Overview</h2>
+
+    {/* Top KPI strip */}
+    <div className="grid grid-4" style={{marginBottom:'var(--space-lg)'}}>
+      <div className="biz-kpi green"><div className="v">{fmtHKD(k.totalAUM)}</div><div className="l">Total AUM</div><div className="s">across {BIZ.funds.length} funds · {BIZ.schemes.length} schemes</div></div>
+      <div className="biz-kpi"><div className="v">{k.activeMembers.toLocaleString()}</div><div className="l">Active Members</div><div className="s">of {k.totalMembers.toLocaleString()} total</div></div>
+      <div className="biz-kpi"><div className="v">{k.activeEmployers.toLocaleString()}</div><div className="l">Active Employers</div><div className="s">on eMPF Platform</div></div>
+      <div className="biz-kpi green"><div className="v">{fmtHKD(k.totMandatory)}</div><div className="l">Mandatory Contrib (period)</div><div className="s">+{fmtHKD(k.totVoluntary+k.totTVC)} voluntary/TVC</div></div>
+    </div>
+    <div className="grid grid-4" style={{marginBottom:'var(--space-lg)'}}>
+      <div className={`biz-kpi ${k.ontimeRate>=95?'green':k.ontimeRate>=85?'amber':'red'}`}><div className="v">{k.ontimeRate}%</div><div className="l">On-time Payment Rate</div><div className="s">target ≥97%</div></div>
+      <div className={`biz-kpi ${k.outstanding>5e7?'red':k.outstanding>1e7?'amber':'green'}`}><div className="v">{fmtHKD(k.outstanding)}</div><div className="l">Outstanding Contributions</div><div className="s">in default / late</div></div>
+      <div className={`biz-kpi ${k.slaRate>=90?'green':'amber'}`}><div className="v">{k.slaRate}%</div><div className="l">Claims SLA (≤30d)</div><div className="s">{k.paidClaims} paid · {fmtHKD(k.totalPayouts)} disbursed</div></div>
+      <div className={`biz-kpi ${k.openCompliance<50?'green':k.openCompliance<150?'amber':'red'}`}><div className="v">{k.openCompliance}</div><div className="l">Open Compliance Cases</div><div className="s">surcharge {fmtHKD(k.totalSurcharge)}</div></div>
+    </div>
+
+    {/* Executive Summary (moved above lifecycle) */}
+    <div className="callout" style={{marginTop:0,marginBottom:'var(--space-lg)'}}>
+      <h3>💡 Executive Summary</h3>
+      <ul>
+        <li><strong>Total AUM at {fmtHKD(k.totalAUM)}</strong> across {BIZ.schemes.length} onboarded schemes covering {k.activeMembers.toLocaleString()} active members in {k.activeEmployers.toLocaleString()} employers.</li>
+        <li>Contribution operations: <strong>{k.ontimeRate}% on-time payment rate</strong> {k.ontimeRate>=95?'✓ above industry benchmark':'⚠ below 95% benchmark'} — outstanding contributions in default total {fmtHKD(k.outstanding)}.</li>
+        <li>Claims: <strong>{k.paidClaims} payouts</strong> totaling {fmtHKD(k.totalPayouts)}, with <strong>{k.slaRate}% meeting the 30-day SLA</strong>. Top reason: {claimMix[0]?.name||'—'} ({pct(claimMix[0]?.value||0,BIZ.claims.length)}%).</li>
+        <li>Compliance: <strong>{k.openCompliance} open cases</strong>, surcharges totalling {fmtHKD(k.totalSurcharge)}. Risk-rated employers — Green: {industryComp.reduce((s,r)=>s+r.green,0)} · Amber: {industryComp.reduce((s,r)=>s+r.amber,0)} · Red: {industryComp.reduce((s,r)=>s+r.red,0)}.</li>
+        <li>Investment: <strong>{k.disPct}% DIS adoption</strong> ({k.disMembers.toLocaleString()} members), aligning with MPFA published benchmark of ~30%.</li>
+        <li>Lifecycle health overall: <strong>{overallScore}%</strong>. Weakest stage: <strong>{[...lifecycle].sort((a,b)=>a.score-b.score)[0]?.label}</strong>. Strongest: <strong>{[...lifecycle].sort((a,b)=>b.score-a.score)[0]?.label}</strong>.</li>
+      </ul>
+    </div>
+
+    {/* Lifecycle health — MBB-style chevron flow */}
+    <div className="card" style={{marginBottom:'var(--space-lg)',overflow:'visible'}}>
+      <h3 style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span>eMPF Business Lifecycle — Health Flow</span>
+        <span style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,letterSpacing:1,textTransform:'uppercase'}}>Hover any stage for detail</span>
+      </h3>
+      <div className="lc-banner">
+        <div>
+          <div><span className="num">{overallScore}</span><span className="unit">%</span></div>
+          <div className="sub">Overall Health Score</div>
+        </div>
+        <div className="desc">Nine stages of the eMPF member & scheme lifecycle, each scored against its own operational target. Upstream weakness typically propagates downstream — read left to right to diagnose root-cause patterns.</div>
+        <div className="pill-row">
+          <span className="pill"><span className="d" style={{background:'#6ee4a0'}}></span>{lifecycle.filter(s=>s.rag==='green').length} Healthy</span>
+          <span className="pill"><span className="d" style={{background:'#ffc368'}}></span>{lifecycle.filter(s=>s.rag==='amber').length} Watch</span>
+          <span className="pill"><span className="d" style={{background:'#ff7a70'}}></span>{lifecycle.filter(s=>s.rag==='red').length} Critical</span>
+        </div>
+      </div>
+      <div className="lc-flow">
+        {lifecycle.map((s,i)=>{
+          const ICONS={ONBOARDING:'🚀',ENROLMENT:'📝',CONTRIBUTION:'💰',PAYMENT:'💳',INVESTMENT:'📈',ACCOUNT_MGMT:'🔀',CLAIMS:'📋',COMPLIANCE:'⚖️',TERMINATION:'🏁'};
+          const statusLabel={green:'On Target',amber:'Below Target',red:'Critical Gap'}[s.rag];
+          return <div key={s.key} className={`lc-chev ${s.rag}`}>
+            <div className="ic">{ICONS[s.key]||'●'}</div>
+            <div className="lbl">{s.label}</div>
+            <div className="sc">{s.score}<span style={{fontSize:10,opacity:.75,marginLeft:1}}>%</span></div>
+            <div className="lc-progress"><div className="f" style={{width:`${s.score}%`}}></div></div>
+            <div className="lc-tooltip">
+              <div className="lc-tt-head">
+                <span className={`tag ${s.rag}`} style={{background:s.rag==='green'?'#2c7a4d':s.rag==='amber'?'#b8761d':'#b5352f'}}></span>
+                <span className="name">{s.label}</span>
+                <span className={`status ${s.rag}`}>{statusLabel}</span>
+              </div>
+              <div className="lc-tt-metric">{s.metric}</div>
+              <div className="lc-tt-nums">
+                <div className="blk"><div className="v">{s.score}%</div><div className="l">Actual</div></div>
+                <div className="blk"><div className="v tgt">{s.target}%</div><div className="l">Target</div></div>
+                <div className="blk"><div style={{marginTop:4}}><span className={`lc-tt-gap ${s.gap>=0?'pos':'neg'}`}>{s.gap>=0?'+':''}{s.gap} pp</span></div><div className="l" style={{marginTop:6}}>Gap</div></div>
+              </div>
+              <div className="lc-tt-detail">{s.detail}</div>
+            </div>
+          </div>;
+        })}
+      </div>
+      <div className="lc-legend">
+        <span><span className="sw" style={{background:'#2c7a4d'}}></span>Healthy (≥80%)</span>
+        <span><span className="sw" style={{background:'#b8761d'}}></span>Watch (60–79%)</span>
+        <span><span className="sw" style={{background:'#b5352f'}}></span>Critical (&lt;60%)</span>
+        <span className="note">Colour thresholds calibrated to stage-specific operational targets</span>
+      </div>
+    </div>
+
+    {/* Contribution trend + composition */}
+    <div className="grid grid-2" style={{marginBottom:'var(--space-lg)'}}>
+      <div className="card"><h3>💰 Monthly Contribution Inflow (HK$)</h3>
+        <ResponsiveContainer width="100%" height={280}><BarChart data={contribTrend}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:9}} angle={-30} textAnchor="end" height={60}/><YAxis style={{fontSize:10}} tickFormatter={fmtHKD}/><Tooltip formatter={fmtHKD}/><Legend/><Bar dataKey="mandatory" stackId="a" fill={COLORS[0]} name="Mandatory"/><Bar dataKey="voluntary" stackId="a" fill={COLORS[2]} name="Voluntary"/><Bar dataKey="tvc" stackId="a" fill={COLORS[3]} name="TVC"/></BarChart></ResponsiveContainer>
+      </div>
+      <div className="card"><h3>📈 On-Time Payment Rate Trend (%)</h3>
+        <ResponsiveContainer width="100%" height={280}><LineChart data={contribTrend}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:9}} angle={-30} textAnchor="end" height={60}/><YAxis domain={[80,100]} style={{fontSize:10}} tickFormatter={v=>v+'%'}/><Tooltip formatter={v=>v+'%'}/><Legend/><Line type="monotone" dataKey="onTimePct" stroke={COLORS[2]} strokeWidth={3} name="Actual"/><ReferenceLine y={97} stroke={COLORS[3]} strokeDasharray="5 4" label={{value:'Target 97%',position:'right',fontSize:10,fill:'var(--text-secondary)'}}/></LineChart></ResponsiveContainer>
+      </div>
+    </div>
+
+    {/* AUM growth */}
+    <div className="card" style={{marginBottom:'var(--space-lg)'}}>
+      <h3>🏦 Assets Under Management — Growth Trend</h3>
+      <ResponsiveContainer width="100%" height={280}><AreaChart data={aumTrend}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis dataKey="month" style={{fontSize:9}} angle={-30} textAnchor="end" height={60}/><YAxis style={{fontSize:10}} tickFormatter={fmtHKD}/><Tooltip formatter={fmtHKD}/><Legend/><Area type="monotone" dataKey="aum" stroke={COLORS[0]} fill={COLORS[0]} fillOpacity={.25} name="Average AUM"/></AreaChart></ResponsiveContainer>
+    </div>
+
+    {/* Two side-by-side: Industry compliance + Claim mix */}
+    <div className="grid grid-2" style={{marginBottom:'var(--space-lg)'}}>
+      <div className="card"><h3>🏢 Compliance Health by Industry</h3>
+        <div style={{maxHeight:340,overflow:'auto',marginTop:8}}>
+          {industryComp.map(r=>{const g=r.green/r.total*100,a=r.amber/r.total*100,d=r.red/r.total*100;return <div key={r.industry} className="heatmap-row">
+            <div style={{fontWeight:600,fontSize:11}}>{r.industry.replace(/_/g,' ')}</div>
+            <div style={{display:'flex',height:18,borderRadius:3,overflow:'hidden'}}>
+              <div className="heatmap-cell" style={{width:`${g}%`,background:'var(--accent-success)'}} title={`Green: ${r.green}`}></div>
+              <div className="heatmap-cell" style={{width:`${a}%`,background:'var(--accent-warning)'}} title={`Amber: ${r.amber}`}></div>
+              <div className="heatmap-cell" style={{width:`${d}%`,background:'var(--accent-danger)'}} title={`Red: ${r.red}`}></div>
+            </div>
+            <div style={{textAlign:'right',color:'var(--text-secondary)'}}>{r.total}</div>
+          </div>;})}
+        </div>
+      </div>
+      <div className="card"><h3>📋 Claim Reasons Distribution</h3>
+        <ResponsiveContainer width="100%" height={300}><PieChart><Pie data={claimMix} dataKey="value" nameKey="name" outerRadius={100} label={({name,percent})=>`${name} ${(percent*100).toFixed(0)}%`} labelLine={false}>{claimMix.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>
+      </div>
+    </div>
+
+    {/* Fund category mix */}
+    <div className="card" style={{marginBottom:'var(--space-lg)'}}>
+      <h3>💼 AUM Distribution by Fund Category</h3>
+      <ResponsiveContainer width="100%" height={300}><BarChart data={fundMix} layout="vertical" margin={{left:30}}><CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/><XAxis type="number" style={{fontSize:10}} tickFormatter={v=>fmtHKD(v*1e6)}/><YAxis type="category" dataKey="name" width={170} style={{fontSize:10}}/><Tooltip formatter={v=>fmtHKD(v*1e6)}/><Bar dataKey="value" fill={COLORS[1]}/></BarChart></ResponsiveContainer>
+    </div>
+
+    {/* Exec Summary moved to top (above lifecycle) */}
+  </div>;
+}
+
+/* === Sub-pages: lightweight category drilldowns === */
+function BizContributionPage(){
+  const monthly=useMemo(()=>{const m={};BIZ.contributions.forEach(c=>{const k=c.contribution_period;if(!k)return;m[k]=m[k]||{month:k,onTime:0,late:0,default:0,rejected:0,count:0,total:0,surcharge:0};m[k].count++;m[k].total+=num(c.total_contribution);m[k].surcharge+=num(c.surcharge_amount);if(c.status==='ON_TIME')m[k].onTime++;else if(c.status==='LATE')m[k].late++;else if(c.status==='REJECTED')m[k].rejected++;else m[k].default++;});return Object.values(m).sort((a,b)=>a.month.localeCompare(b.month));},[]);
+  const byMethod={};BIZ.contributions.forEach(c=>{byMethod[c.payment_method||'?']=(byMethod[c.payment_method||'?']||0)+1;});
+  const methodData=Object.entries(byMethod).map(([name,value])=>({name,value}));
+  const ageBuckets={'0d':0,'1-7d':0,'8-30d':0,'>30d':0};
+  BIZ.contributions.forEach(c=>{const d=parseInt(c.days_late)||0;if(d<=0)ageBuckets['0d']++;else if(d<=7)ageBuckets['1-7d']++;else if(d<=30)ageBuckets['8-30d']++;else ageBuckets['>30d']++;});
+  const ageData=Object.entries(ageBuckets).map(([name,value])=>({name,value}));
+  return <div>
+    <h2 className="section-title">Contribution & Payment</h2>
+    <div className="grid grid-2"><div className="card"><h3>Contribution Status by Month</h3><ResponsiveContainer width="100%" height={280}><BarChart data={monthly}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="month" angle={-30} textAnchor="end" height={60} style={{fontSize:9}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Bar dataKey="onTime" stackId="s" fill={COLORS[2]} name="On-time"/><Bar dataKey="late" stackId="s" fill={COLORS[3]} name="Late"/><Bar dataKey="default" stackId="s" fill={COLORS[4]} name="Default"/></BarChart></ResponsiveContainer></div>
+    <div className="card"><h3>Surcharge Collected by Month</h3><ResponsiveContainer width="100%" height={280}><AreaChart data={monthly}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="month" angle={-30} textAnchor="end" height={60} style={{fontSize:9}}/><YAxis style={{fontSize:10}} tickFormatter={fmtHKD}/><Tooltip formatter={fmtHKD}/><Area type="monotone" dataKey="surcharge" stroke={COLORS[4]} fill={COLORS[4]} fillOpacity={.3}/></AreaChart></ResponsiveContainer></div></div>
+    <div className="grid grid-2" style={{marginTop:16}}><div className="card"><h3>Payment Method Mix</h3><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={methodData} dataKey="value" nameKey="name" outerRadius={85} label>{methodData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div>
+    <div className="card"><h3>Late Payment Aging</h3><ResponsiveContainer width="100%" height={260}><BarChart data={ageData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis style={{fontSize:10}}/><Tooltip/><Bar dataKey="value" fill={COLORS[3]}/></BarChart></ResponsiveContainer></div></div>
+  </div>;
+}
+
+function BizMemberPage(){
+  const ageDist={};BIZ.members.forEach(m=>{ageDist[m.age_bracket||'?']=(ageDist[m.age_bracket||'?']||0)+1;});
+  const ageData=Object.entries(ageDist).map(([name,value])=>({name,value})).sort((a,b)=>a.name.localeCompare(b.name));
+  const incomeDist={};BIZ.members.forEach(m=>{incomeDist[m.relevant_income_bracket||'?']=(incomeDist[m.relevant_income_bracket||'?']||0)+1;});
+  const incomeData=Object.entries(incomeDist).map(([name,value])=>({name,value}));
+  const acctType={};BIZ.members.forEach(m=>{acctType[m.account_type||'?']=(acctType[m.account_type||'?']||0)+1;});
+  const acctData=Object.entries(acctType).map(([name,value])=>({name,value}));
+  const enrollMonths={};BIZ.members.forEach(m=>{const k=ymOf(m.enrollment_date);if(!k)return;enrollMonths[k]=enrollMonths[k]||{month:k,total:0,compliant:0};enrollMonths[k].total++;if(m.enrollment_compliant==='true'||m.enrollment_compliant===true)enrollMonths[k].compliant++;});
+  const enrollData=Object.values(enrollMonths).sort((a,b)=>a.month.localeCompare(b.month)).map(r=>({...r,rate:pct(r.compliant,r.total)}));
+  return <div>
+    <h2 className="section-title">Enrolment & Membership</h2>
+    <div className="grid grid-3" style={{marginBottom:16}}>
+      <div className="biz-kpi green"><div className="v">{BIZ.members.length.toLocaleString()}</div><div className="l">Total Members</div></div>
+      <div className="biz-kpi"><div className="v">{pct(BIZ.members.filter(m=>m.uses_dis==='true'||m.uses_dis===true).length,BIZ.members.length)}%</div><div className="l">DIS Adoption</div></div>
+      <div className="biz-kpi"><div className="v">{pct(BIZ.members.filter(m=>m.enrollment_compliant==='true'||m.enrollment_compliant===true).length,BIZ.members.length)}%</div><div className="l">On-time Enrolment</div></div>
+    </div>
+    <div className="grid grid-2"><div className="card"><h3>Age Distribution</h3><ResponsiveContainer width="100%" height={280}><BarChart data={ageData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name"/><YAxis style={{fontSize:10}}/><Tooltip/><Bar dataKey="value" fill={COLORS[0]}/></BarChart></ResponsiveContainer></div>
+    <div className="card"><h3>Income Brackets (HK$)</h3><ResponsiveContainer width="100%" height={280}><BarChart data={incomeData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name" style={{fontSize:9}}/><YAxis style={{fontSize:10}}/><Tooltip/><Bar dataKey="value" fill={COLORS[1]}/></BarChart></ResponsiveContainer></div>
+    <div className="card"><h3>Account Type Mix</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={acctData} dataKey="value" nameKey="name" outerRadius={90} label>{acctData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div>
+    <div className="card"><h3>Enrolment Compliance Trend (60-day rule)</h3><ResponsiveContainer width="100%" height={280}><LineChart data={enrollData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="month" angle={-30} textAnchor="end" height={60} style={{fontSize:9}}/><YAxis domain={[0,100]} style={{fontSize:10}} tickFormatter={v=>v+'%'}/><Tooltip formatter={v=>v+'%'}/><Line type="monotone" dataKey="rate" stroke={COLORS[2]} strokeWidth={3}/></LineChart></ResponsiveContainer></div></div>
+  </div>;
+}
+
+function BizClaimsPage(){
+  const m={};BIZ.claims.forEach(c=>{m[c.claim_type]=m[c.claim_type]||{name:c.claim_type.replace(/_/g,' '),count:0,paid:0,amount:0};m[c.claim_type].count++;if(c.status==='PAID'){m[c.claim_type].paid++;m[c.claim_type].amount+=num(c.amount_paid);}});
+  const data=Object.values(m).sort((a,b)=>b.count-a.count);
+  const slaTrend={};BIZ.claims.forEach(c=>{const k=ymOf(c.submission_date);if(!k)return;slaTrend[k]=slaTrend[k]||{month:k,total:0,met:0,days:0,n:0};slaTrend[k].total++;if(c.sla_met==='true'||c.sla_met===true)slaTrend[k].met++;const d=parseInt(c.processing_days);if(!isNaN(d)){slaTrend[k].days+=d;slaTrend[k].n++;}});
+  const slaData=Object.values(slaTrend).sort((a,b)=>a.month.localeCompare(b.month)).map(r=>({month:r.month,slaRate:pct(r.met,r.total),avgDays:r.n?Math.round(r.days/r.n):0}));
+  const status={};BIZ.claims.forEach(c=>{status[c.status]=(status[c.status]||0)+1;});
+  const statusData=Object.entries(status).map(([name,value])=>({name,value}));
+  return <div>
+    <h2 className="section-title">Claims & Withdrawals</h2>
+    <div className="grid grid-2"><div className="card"><h3>Claims by Reason — Volume & Payout</h3><ResponsiveContainer width="100%" height={300}><BarChart data={data}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name" angle={-25} textAnchor="end" height={80} style={{fontSize:9}}/><YAxis yAxisId="l" style={{fontSize:10}}/><YAxis yAxisId="r" orientation="right" style={{fontSize:10}} tickFormatter={fmtHKD}/><Tooltip/><Legend/><Bar yAxisId="l" dataKey="count" fill={COLORS[0]} name="# Claims"/><Bar yAxisId="r" dataKey="amount" fill={COLORS[2]} name="Payout HK$"/></BarChart></ResponsiveContainer></div>
+    <div className="card"><h3>Claim Status Distribution</h3><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={statusData} dataKey="value" nameKey="name" outerRadius={100} label>{statusData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div>
+    <div className="card" style={{gridColumn:'1/-1'}}><h3>30-Day SLA Adherence Trend</h3><ResponsiveContainer width="100%" height={280}><LineChart data={slaData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="month" angle={-30} textAnchor="end" height={60} style={{fontSize:9}}/><YAxis yAxisId="l" domain={[0,100]} style={{fontSize:10}} tickFormatter={v=>v+'%'}/><YAxis yAxisId="r" orientation="right" style={{fontSize:10}}/><Tooltip/><Legend/><Line yAxisId="l" type="monotone" dataKey="slaRate" stroke={COLORS[2]} strokeWidth={3} name="SLA Met %"/><Line yAxisId="r" type="monotone" dataKey="avgDays" stroke={COLORS[3]} strokeWidth={2} name="Avg Days"/></LineChart></ResponsiveContainer></div></div>
+  </div>;
+}
+
+function BizCompliancePage(){
+  const byType={};BIZ.compliance_cases.forEach(c=>{byType[c.case_type]=byType[c.case_type]||{name:c.case_type.replace(/_/g,' '),count:0,outstanding:0,surcharge:0};byType[c.case_type].count++;byType[c.case_type].outstanding+=num(c.outstanding_amount);byType[c.case_type].surcharge+=num(c.surcharge_amount);});
+  const typeData=Object.values(byType);
+  const repeat={};BIZ.employers.forEach(e=>{const c=parseInt(e.default_count_ltd)||0;if(c>0){repeat[e.employer_id]={id:e.employer_id,name:e.business_name,count:c,industry:e.industry,rating:e.compliance_rating};}});
+  const top10=Object.values(repeat).sort((a,b)=>b.count-a.count).slice(0,10);
+  const sevDist={};BIZ.compliance_cases.forEach(c=>{sevDist[c.severity||'?']=(sevDist[c.severity||'?']||0)+1;});
+  const sevData=Object.entries(sevDist).map(([name,value])=>({name,value}));
+  return <div>
+    <h2 className="section-title">Compliance & Risk</h2>
+    <div className="grid grid-2"><div className="card"><h3>Cases by Type</h3><ResponsiveContainer width="100%" height={280}><BarChart data={typeData} layout="vertical" margin={{left:30}}><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" style={{fontSize:10}}/><YAxis type="category" dataKey="name" width={180} style={{fontSize:10}}/><Tooltip/><Bar dataKey="count" fill={COLORS[4]}/></BarChart></ResponsiveContainer></div>
+    <div className="card"><h3>Severity Distribution</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={sevData} dataKey="value" nameKey="name" outerRadius={100} label>{sevData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer></div></div>
+    <div className="card" style={{marginTop:16}}><h3>🚨 Top 10 Repeat-Offender Employers</h3><table><thead><tr><th>Employer ID</th><th>Business Name</th><th>Industry</th><th>Rating</th><th>Default Count (LTD)</th></tr></thead><tbody>{top10.map(e=><tr key={e.id}><td style={{fontFamily:'monospace',fontSize:11}}>{e.id}</td><td>{e.name}</td><td style={{fontSize:11}}>{e.industry}</td><td><span className={`badge badge-${e.rating==='RED'?'red':e.rating==='AMBER'?'amber':'green'}`}>{e.rating}</span></td><td><strong>{e.count}</strong></td></tr>)}</tbody></table></div>
+  </div>;
+}
+
+function BizInvestmentPage(){
+  const byType={};BIZ.funds.forEach(f=>{const k=f.fund_type||'?';byType[k]=byType[k]||{name:k.replace(/_/g,' '),aum:0,n:0,retSum:0,fer:0};byType[k].aum+=num(f.aum_hkm);byType[k].n++;byType[k].retSum+=num(f.ytd_return_pct);byType[k].fer+=num(f.fer_pct);});
+  const typeData=Object.values(byType).map(t=>({...t,aum:Math.round(t.aum),avgRet:t.n?Math.round(t.retSum/t.n*10)/10:0,avgFer:t.n?Math.round(t.fer/t.n*100)/100:0})).sort((a,b)=>b.aum-a.aum);
+  const txByMonth={};BIZ.fund_transactions.forEach(t=>{const k=ymOf(t.submission_date);if(!k)return;txByMonth[k]=(txByMonth[k]||0)+1;});
+  const txData=Object.entries(txByMonth).sort().map(([month,count])=>({month,count}));
+  const transferStatus={};BIZ.account_transfers.forEach(t=>{transferStatus[t.status]=(transferStatus[t.status]||0)+1;});
+  const tsData=Object.entries(transferStatus).map(([name,value])=>({name,value}));
+  return <div>
+    <h2 className="section-title">Investment & Account Management</h2>
+    <div className="card" style={{marginBottom:16}}><h3>AUM, YTD Return, & FER by Fund Category</h3><ResponsiveContainer width="100%" height={320}><BarChart data={typeData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="name" angle={-25} textAnchor="end" height={90} style={{fontSize:9}}/><YAxis yAxisId="l" style={{fontSize:10}} tickFormatter={fmtHKD}/><YAxis yAxisId="r" orientation="right" style={{fontSize:10}} tickFormatter={v=>v+'%'}/><Tooltip/><Legend/><Bar yAxisId="l" dataKey="aum" fill={COLORS[0]} name="AUM (HK$M)"/><Line yAxisId="r" type="monotone" dataKey="avgRet" stroke={COLORS[2]} strokeWidth={3} name="Avg YTD %"/><Line yAxisId="r" type="monotone" dataKey="avgFer" stroke={COLORS[4]} strokeWidth={2} name="Avg FER %"/></BarChart></ResponsiveContainer></div>
+    <div className="grid grid-2"><div className="card"><h3>Fund Switch Transactions Over Time</h3><ResponsiveContainer width="100%" height={260}><AreaChart data={txData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="month" angle={-30} textAnchor="end" height={60} style={{fontSize:9}}/><YAxis style={{fontSize:10}}/><Tooltip/><Area type="monotone" dataKey="count" stroke={COLORS[1]} fill={COLORS[1]} fillOpacity={.3}/></AreaChart></ResponsiveContainer></div>
+    <div className="card"><h3>Account Transfers Status (ECA + Consolidation)</h3><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={tsData} dataKey="value" nameKey="name" outerRadius={90} label>{tsData.map((e,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/><Legend/></PieChart></ResponsiveContainer></div></div>
+  </div>;
+}
+
+function MissionControl(){
+  const k=useMemo(()=>{
+    const totalAUM=BIZ.funds.reduce((s,f)=>s+num(f.aum_hkm)*1e6,0);
+    const totalMembers=BIZ.members.length;
+    const totalEmployers=BIZ.employers.length;
+    const onbSchemes=BIZ.schemes.filter(s=>s.onboarding_status==='ONBOARDED'||s.onboarding_status==='COMPLETED').length;
+    const totSchemes=BIZ.schemes.length;
+    const claimsSla=BIZ.claims.filter(c=>c.sla_met==='true'||c.sla_met===true).length;
+    const claimsTot=BIZ.claims.length||1;
+    const trSla=BIZ.account_transfers.filter(t=>num(t.processing_days)<=7&&t.status==='COMPLETED').length;
+    const trTot=BIZ.account_transfers.filter(t=>t.status==='COMPLETED').length||1;
+    const fxSla=BIZ.fund_transactions.filter(t=>num(t.processing_time_days)<=3&&t.status==='EXECUTED').length;
+    const fxTot=BIZ.fund_transactions.filter(t=>t.status==='EXECUTED').length||1;
+    const enrSla=BIZ.members.filter(m=>m.enrollment_compliant==='true'||m.enrollment_compliant===true).length;
+    const enrTot=BIZ.members.length||1;
+    const compositeSLA=Math.round((claimsSla/claimsTot+trSla/trTot+fxSla/fxTot+enrSla/enrTot)/4*1000)/10;
+    const p01Open=D.incidents?D.incidents.filter(i=>(i.priority==='P0'||i.priority==='P1')&&['OPEN','IN_PROGRESS','PENDING'].includes(i.status)).length:0;
+    const monthsElapsed=22;
+    const expectedSavings=50*(monthsElapsed/120);
+    return {totalAUM,totalMembers,totalEmployers,onbSchemes,totSchemes,compositeSLA,p01Open,expectedSavings};
+  },[]);
+  const sla=k.compositeSLA;
+  const slaUp=sla>=90;
+  const risks=[
+    {ic:'⚠️',sev:'red',tit:'Complaint backlog above 12-day pledge',meta:'18-day avg vs 12-day pledge — 2,400 plus open — Source LCQ20',trend:'up'},
+    {ic:'🔒',sev:'amber',tit:'Phishing campaigns targeting eMPF brand',meta:'Active fraudulent domains — 24x7 SOC monitoring',trend:'flat'},
+    {ic:'🏦',sev:'amber',tit:'BEA Industry Scheme onboarding (Apr 30)',meta:'Final scheme — last-mile data migration risk',trend:'down'},
+    {ic:'👥',sev:'amber',tit:'Service centre walk-in queues',meta:'Wanchai, Mongkok, Tsuen Wan — grassroots support load',trend:'down'},
+    {ic:'📞',sev:'green',tit:'Hotline answer time within 2-min pledge',meta:'10s avg — 1,300 dedicated agents',trend:'flat'},
+  ];
+  return <div>
+    <h2 className="section-title">Mission Control — eMPF Platform Co.</h2>
+    <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:16}}>One-page leadership view. Data as of week ending 12 Apr 2026. Reporting line: Board of Directors.</div>
+    <div className="exec-hero">
+      <div className="blk"><div><span className="v">{k.onbSchemes}</span><span className="u">/{k.totSchemes}</span></div><div className="l">Schemes Onboarded</div><div className="d up">100% trustees migrated</div><div className="s">12 trustees, 22 master schemes, 2 industry schemes (BCT done, BEA Apr 30)</div></div>
+      <div className="blk"><div><span className="v">{(k.totalMembers/1000).toFixed(1)}</span><span className="u">k</span></div><div className="l">Members on Platform</div><div className="s">National target 4.75M, iAM Smart self-service</div></div>
+      <div className="blk"><div><span className="v">{sla.toFixed(1)}</span><span className="u">%</span></div><div className="l">Composite Service Pledge</div><div className={slaUp?'d up':'d down'}>{slaUp?'within target':'below 90% target'}</div><div className="s">Weighted across enrolment, contribution, transfer, fund-switch, claim</div></div>
+      <div className="blk"><div><span className="v">HK$ {k.expectedSavings.toFixed(2)}</span><span className="u">B</span></div><div className="l">Cumulative Cost Savings (est)</div><div className="s">Run-rate vs revised HK$50B 10-year MPFA target (HK$40B downside)</div></div>
+    </div>
+    <div className="grid grid-4" style={{marginBottom:16}}>
+      <div className="mini-kpi green"><div className="v">HK$ {(k.totalAUM/1e9).toFixed(1)}B</div><div className="l">Assets Under Admin</div><div className="s">Across {BIZ.funds.length} constituent funds</div></div>
+      <div className="mini-kpi"><div className="v">{(k.totalEmployers).toLocaleString()}</div><div className="l">Employers Active</div><div className="s">National target ~360,000</div></div>
+      <div className={k.p01Open>10?'mini-kpi red':k.p01Open>3?'mini-kpi amber':'mini-kpi green'}><div className="v">{k.p01Open}</div><div className="l">P0/P1 Incidents Open</div><div className="s">24x7 SOC monitoring</div></div>
+      <div className="mini-kpi amber"><div className="v">~11.5k</div><div className="l">Cumulative Complaints</div><div className="s">76% resolved, 18-day avg (LCQ20 Mar 2026)</div></div>
+    </div>
+    <div className="grid grid-2">
+      <div className="card"><h3>Top Risks Today</h3><div style={{marginTop:8}}>{risks.map((r,i)=><div key={i} className="risk-item"><div className="ric">{r.ic}</div><div><div className="rtit">{r.tit}</div><div className="rmeta">{r.meta}</div></div><div className={'rsev '+r.sev}>{r.sev}</div><div className="rtrend">{r.trend}</div></div>)}</div></div>
+      <div className="card"><h3>This Week Board-Level Items</h3><ul style={{paddingLeft:18,marginTop:10,fontSize:13,lineHeight:1.85}}><li><strong>BEA (MPF) Industry Scheme</strong> — final onboarding 30 Apr (T-14 days). Risk Committee review scheduled.</li><li><strong>CEO succession</strong> — Eric Lui term to Dec 2026; open recruitment exercise underway (per MPFA Sept 2025).</li><li><strong>Service pledge gap</strong> — complaints averaging 18 wd vs 12 wd pledge. Task Force expanded to 1,300 agents.</li><li><strong>Fee reduction tracking</strong> — Q2 review of Trustee straight-pass-on compliance.</li><li><strong>Cyber drill</strong> — quarterly simulation with Digital Policy Office.</li><li><strong>LegCo follow-ups</strong> — written replies to LCQ20 (25 Mar) commitments.</li></ul></div>
+    </div>
+  </div>;
+}
+
+function TrusteeScorecard(){
+  const data=useMemo(()=>{
+    const byTrustee={};
+    BIZ.schemes.forEach(s=>{const t=s.trustee_name||'Unknown';if(!byTrustee[t])byTrustee[t]={trustee:t,schemes:[],aum:0,members:0,funds:0,onboarded:0,total:0,fers:[]};byTrustee[t].schemes.push(s);byTrustee[t].aum+=num(s.aum_hkb);byTrustee[t].members+=num(s.member_count);byTrustee[t].funds+=num(s.fund_count);byTrustee[t].total++;if(s.onboarding_status==='ONBOARDED'||s.onboarding_status==='COMPLETED')byTrustee[t].onboarded++;if(s.avg_fer_pct)byTrustee[t].fers.push(num(s.avg_fer_pct));});
+    Object.values(byTrustee).forEach(t=>{
+      const schemeIds={};t.schemes.forEach(s=>{schemeIds[s.scheme_id]=1;});
+      const trsTr=BIZ.account_transfers.filter(x=>schemeIds[x.from_scheme_id]||schemeIds[x.to_scheme_id]);
+      const completed=trsTr.filter(x=>x.status==='COMPLETED');
+      const within7d=completed.filter(x=>num(x.processing_days)<=7).length;
+      t.transferSlaPct=completed.length?Math.round(within7d/completed.length*100):0;
+      t.transferVolume=trsTr.length;
+      const claimsTr=BIZ.claims.filter(c=>{const m=BIZ.members.find(mm=>mm.member_id===c.member_id);return m&&schemeIds[m.scheme_id];});
+      const claimsSla=claimsTr.filter(c=>c.sla_met==='true'||c.sla_met===true).length;
+      t.claimSlaPct=claimsTr.length?Math.round(claimsSla/claimsTr.length*100):0;
+      t.avgFer=t.fers.length?(t.fers.reduce((a,b)=>a+b,0)/t.fers.length).toFixed(2):'N/A';
+      const slaScore=Math.min(t.transferSlaPct||100,t.claimSlaPct||100);
+      t.status=t.onboarded<t.total?'gray':slaScore>=85?'green':slaScore>=70?'amber':'red';
+      t.statusLabel=t.onboarded<t.total?'pending':slaScore>=85?'healthy':slaScore>=70?'watch':'action';
+      const dates=t.schemes.map(s=>s.onboarding_date).filter(Boolean).sort();
+      t.firstOnb=dates[0]?fmtDate(dates[0]):'N/A';
+    });
+    return Object.values(byTrustee).sort((a,b)=>b.aum-a.aum);
+  },[]);
+  const totals=useMemo(()=>{const aum=data.reduce((s,t)=>s+t.aum,0);const mem=data.reduce((s,t)=>s+t.members,0);const onb=data.reduce((s,t)=>s+t.onboarded,0);const tot=data.reduce((s,t)=>s+t.total,0);const green=data.filter(t=>t.status==='green').length;const amber=data.filter(t=>t.status==='amber').length;const red=data.filter(t=>t.status==='red').length;return {aum,mem,onb,tot,green,amber,red,n:data.length};},[data]);
+  return <div>
+    <h2 className="section-title">Trustee and Scheme Scorecard</h2>
+    <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:16}}>Per-trustee operational health. Onboarding ascending by AUM size (eMPF policy). 12 trustees, 22 master plus 2 industry schemes.</div>
+    <div className="grid grid-4" style={{marginBottom:16}}>
+      <div className="mini-kpi"><div className="v">{totals.n}</div><div className="l">Trustees</div><div className="s">{totals.tot} schemes total</div></div>
+      <div className="mini-kpi green"><div className="v">{totals.onb}/{totals.tot}</div><div className="l">Schemes Onboarded</div><div className="s">{Math.round(totals.onb/totals.tot*100)}% complete</div></div>
+      <div className="mini-kpi"><div className="v">HK$ {totals.aum.toFixed(1)}B</div><div className="l">Total AUM Migrated</div><div className="s">{(totals.mem/1000).toFixed(0)}k members</div></div>
+      <div className="mini-kpi"><div className="v">{totals.green} / {totals.amber} / {totals.red}</div><div className="l">Health Green / Amber / Red</div><div className="s">Composite of transfer plus claim SLAs</div></div>
+    </div>
+    <div className="tr-grid">{data.map(t=><div key={t.trustee} className={'tr-card '+t.status}><div className="thead"><div className="tname">{t.trustee}</div><div className={'tstatus '+t.status}>{t.statusLabel}</div></div><div className="tmeta">{t.total} scheme(s), onboarded from {t.firstOnb}</div><div className="tgrid"><div><div className="lbl">AUM</div><div className="val">HK$ {t.aum.toFixed(1)}B</div></div><div><div className="lbl">Members</div><div className="val">{t.members.toLocaleString()}</div></div><div><div className="lbl">Funds</div><div className="val">{t.funds}</div></div><div><div className="lbl">Avg FER</div><div className="val">{t.avgFer}%</div></div><div><div className="lbl">Transfer SLA 7d</div><div className="val" style={{color:t.transferSlaPct>=85?'#2c7a4d':t.transferSlaPct>=70?'#b8761d':'#b5352f'}}>{t.transferSlaPct}%</div></div><div><div className="lbl">Claim SLA met</div><div className="val" style={{color:t.claimSlaPct>=85?'#2c7a4d':t.claimSlaPct>=70?'#b8761d':'#b5352f'}}>{t.claimSlaPct}%</div></div></div></div>)}</div>
+  </div>;
+}
+
+function ServicePledgePerformance(){
+  const PLEDGES=[
+    {cat:'Registration and Enrolment',name:'eMPF Registration',target:'2 wd',vol:BIZ.members.length,rate:Math.round(BIZ.members.filter(m=>num(m.enrollment_sla_days)<=2).length/(BIZ.members.length||1)*1000)/10},
+    {cat:'Registration and Enrolment',name:'Scheme Enrolment Employers',target:'5 wd',vol:BIZ.employers.length,rate:89.4},
+    {cat:'Registration and Enrolment',name:'Scheme Enrolment Members',target:'2 wd',vol:BIZ.members.filter(m=>m.account_type!=='SEP').length,rate:Math.round(BIZ.members.filter(m=>m.account_type!=='SEP'&&(m.enrollment_compliant==='true'||m.enrollment_compliant===true)).length/(BIZ.members.filter(m=>m.account_type!=='SEP').length||1)*1000)/10},
+    {cat:'Contribution Processing',name:'Contribution Direct Debit (DDA)',target:'6 wd',vol:1100,rate:92.8},
+    {cat:'Contribution Processing',name:'Contribution Direct Credit',target:'5 wd',vol:980,rate:88.1},
+    {cat:'Contribution Processing',name:'Contribution Paper Cheque',target:'6 wd',vol:120,rate:74.3},
+    {cat:'Investment',name:'Change Investment Mandate (future)',target:'same-day',vol:140,rate:99.1},
+    {cat:'Investment',name:'Change Investment Allocation (existing)',target:'2 wd',vol:BIZ.fund_transactions.length,rate:Math.round(BIZ.fund_transactions.filter(t=>num(t.processing_time_days)<=2&&t.status==='EXECUTED').length/(BIZ.fund_transactions.filter(t=>t.status==='EXECUTED').length||1)*1000)/10},
+    {cat:'Transfer of Benefits',name:'Transfer eMPF verification',target:'4 wd',vol:BIZ.account_transfers.length,rate:Math.round(BIZ.account_transfers.filter(t=>num(t.processing_days)<=4).length/(BIZ.account_transfers.length||1)*1000)/10},
+    {cat:'Transfer of Benefits',name:'Transfer original trustee redemption',target:'7 wd avg',vol:BIZ.account_transfers.filter(t=>t.status==='COMPLETED').length,rate:Math.round(BIZ.account_transfers.filter(t=>num(t.processing_days)<=7&&t.status==='COMPLETED').length/(BIZ.account_transfers.filter(t=>t.status==='COMPLETED').length||1)*1000)/10},
+    {cat:'Withdrawal of Benefits',name:'Withdrawal Retirement (age 65)',target:'3 wd',vol:320,rate:91.2},
+    {cat:'Withdrawal of Benefits',name:'Withdrawal Early grounds',target:'6 wd',vol:BIZ.claims.filter(c=>c.claim_type!=='RETIREMENT'&&c.claim_type!=='AGE_65').length,rate:Math.round(BIZ.claims.filter(c=>c.claim_type!=='RETIREMENT'&&c.claim_type!=='AGE_65'&&num(c.processing_days)<=6).length/(BIZ.claims.filter(c=>c.claim_type!=='RETIREMENT'&&c.claim_type!=='AGE_65').length||1)*1000)/10},
+    {cat:'Customer Service',name:'Hotline answer',target:'2 min',vol:38400,rate:97.2},
+    {cat:'Customer Service',name:'Complaint acknowledgement',target:'3 wd',vol:11500,rate:94.5},
+    {cat:'Customer Service',name:'Complaint full reply',target:'12 wd',vol:8800,rate:62.4},
+  ];
+  const cats=[];PLEDGES.forEach(p=>{if(cats.indexOf(p.cat)<0)cats.push(p.cat);});
+  const overall=PLEDGES.reduce((s,r)=>s+r.rate,0)/PLEDGES.length;
+  const breach=PLEDGES.filter(r=>r.rate<90).length;
+  const overallCls=overall>=90?'mini-kpi green':overall>=80?'mini-kpi amber':'mini-kpi red';
+  const breachCls=breach>3?'mini-kpi red':'mini-kpi amber';
+  return <div>
+    <h2 className="section-title">Service Pledge Performance</h2>
+    <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:16}}>Adherence to published eMPF service pledges. Threshold 90%. Working days unless noted.</div>
+    <div className="grid grid-4" style={{marginBottom:16}}>
+      <div className={overallCls}><div className="v">{overall.toFixed(1)}%</div><div className="l">Overall Pledge Adherence</div><div className="s">Unweighted across {PLEDGES.length} services</div></div>
+      <div className="mini-kpi green"><div className="v">{PLEDGES.length-breach}</div><div className="l">Within Pledge (90% plus)</div><div className="s">of {PLEDGES.length} measured</div></div>
+      <div className={breachCls}><div className="v">{breach}</div><div className="l">Breaching Pledge</div><div className="s">requires task-force escalation</div></div>
+      <div className="mini-kpi"><div className="v">12 wd</div><div className="l">Complaint Reply Pledge</div><div className="s">Actual avg 18 wd (LCQ20 Mar-2026)</div></div>
+    </div>
+    {cats.map(cat=><div key={cat} className="card" style={{marginBottom:14,padding:0,overflow:'hidden'}}>
+      <div style={{padding:'12px 16px',background:'var(--bg-secondary)',borderBottom:'1px solid var(--border)',fontSize:13,fontWeight:700,color:'var(--text-primary)'}}>{cat}</div>
+      {PLEDGES.filter(r=>r.cat===cat).map((r,i)=>{const cls=r.rate>=90?'green':r.rate>=80?'amber':'red';const fillColor=cls==='green'?'#2c7a4d':cls==='amber'?'#b8761d':'#b5352f';return <div key={i} className="pledge-row"><div><div className="pname">{r.name}</div><div className="psub">Pledge: {r.target}</div></div><div className="ptarget">target 90% plus</div><div className="pledge-bar"><div className="fill" style={{width:Math.min(100,r.rate)+'%',background:fillColor}}/><div className="target-line" style={{left:'90%'}}/></div><div className={'prate '+cls}>{r.rate.toFixed(1)}%</div><div className="pvol">{r.vol.toLocaleString()}</div></div>;})}
+    </div>)}
+    <div className="callout"><h3>How to read this dashboard</h3><ul><li><strong>Pledge</strong>: published service standard from eMPF Platform Co. (e.g., within 5 working days).</li><li><strong>Rate</strong>: percent of clean cases meeting the pledge in the latest reporting period.</li><li><strong>Threshold</strong>: 90% adherence. The vertical mark on each bar shows the 90% line.</li><li><strong>Volume</strong>: number of in-scope transactions or interactions.</li><li>Per-trustee transfer/withdrawal SLAs (5 to 12 wd depending on trustee) are tracked separately in Trustee Scorecard.</li></ul></div>
+  </div>;
+}
+
+function ServiceQualityComplaints(){
+  const cumul=11500;const resolved=8800;const open=cumul-resolved;
+  const avgWd=18;const pledgeWd=12;
+  const categories=[
+    {n:'Unsuccessful registration / iAM Smart issues',c:2920},
+    {n:'Incorrect or missing contribution records',c:2470},
+    {n:'Difficulty changing personal/employer info',c:1610},
+    {n:'Voluntary contribution failures',c:1450},
+    {n:'User interface / mobile app usability',c:1280},
+    {n:'Fund switch / investment instruction errors',c:780},
+    {n:'Transfer-in / transfer-out delays',c:520},
+    {n:'Surcharge dispute (PN appeals)',c:280},
+    {n:'Other',c:190},
+  ];
+  const channels=[
+    {n:'Customer service hotline (183 2622)',vol:'~38,400',avg:'10 sec answer',pledge:'2 min or less'},
+    {n:'Contribution enquiry hotline (3197 2834)',vol:'~3,200',avg:'instant',pledge:'2 min or less'},
+    {n:'Service centres (Wanchai, Mongkok, Tsuen Wan)',vol:'~16,000 walk-ins',avg:'24-min queue',pledge:'best-effort'},
+    {n:'Self-service kiosks (18 districts)',vol:'~5,800/mo',avg:'self-service',pledge:'24x7 select sites'},
+    {n:'Web portal',vol:'~1.2M sessions/mo',avg:'2.4s load',pledge:'99.5% uptime'},
+    {n:'Mobile app (iOS, Android, Harmony)',vol:'~2.8M sessions/mo',avg:'1.8s startup',pledge:'99.5% uptime'},
+    {n:'Outreach (eMPF Fleet, employer visits)',vol:'~16,000 visits',avg:'on-site',pledge:'best-effort'},
+    {n:'Email / Fax / Drop-in box',vol:'~4,500/mo',avg:'3-day ack',pledge:'3-day ack'},
+  ];
+  const resCls=resolved/cumul>=0.85?'mini-kpi green':'mini-kpi amber';
+  const avgCls=avgWd<=pledgeWd?'mini-kpi green':'mini-kpi red';
+  return <div>
+    <h2 className="section-title">Service Quality and Complaints</h2>
+    <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:16}}>Cross-channel customer experience. Complaint metrics align with LegCo LCQ20 (25 Mar 2026) public reporting.</div>
+    <div className="grid grid-4" style={{marginBottom:16}}>
+      <div className="mini-kpi"><div className="v">{cumul.toLocaleString()}</div><div className="l">Cumulative Complaints</div><div className="s">Since launch (Jun 2024)</div></div>
+      <div className={resCls}><div className="v">{Math.round(resolved/cumul*100)}%</div><div className="l">Resolution Rate</div><div className="s">{resolved.toLocaleString()} of {cumul.toLocaleString()} closed</div></div>
+      <div className={avgCls}><div className="v">{avgWd} wd</div><div className="l">Avg Resolution Time</div><div className="s">vs {pledgeWd} wd pledge — above target</div></div>
+      <div className="mini-kpi"><div className="v">~1,300</div><div className="l">CS Agents Dedicated</div><div className="s">5x since Sep 2025 (LCQ4)</div></div>
+    </div>
+    <div className="grid grid-2">
+      <div className="card"><h3>Complaint Categories (cumulative)</h3><div style={{marginTop:8}}>{categories.map((c,i)=>{const p=Math.round(c.c/cumul*100);const cls=p>20?'red':p>10?'amber':'green';const fillColor=cls==='red'?'#b5352f':cls==='amber'?'#b8761d':'#2c7a4d';return <div key={i} className="cmpl-row"><div className="cname">{c.n}</div><div className="ccnt">{c.c.toLocaleString()}</div><div className="pledge-bar"><div className="fill" style={{width:Math.min(100,p*4)+'%',background:fillColor}}/></div><div className="cpct">{p}%</div></div>;})}</div></div>
+      <div className="card"><h3>Service Channel Performance</h3><table style={{marginTop:8,fontSize:12}}><thead><tr><th>Channel</th><th>Volume</th><th>Performance</th><th>Pledge</th></tr></thead><tbody>{channels.map((c,i)=><tr key={i}><td style={{fontSize:11.5}}>{c.n}</td><td style={{fontSize:11}}>{c.vol}</td><td style={{fontSize:11.5,fontWeight:600}}>{c.avg}</td><td style={{fontSize:10.5,color:'var(--text-muted)'}}>{c.pledge}</td></tr>)}</tbody></table></div>
+    </div>
+    <div className="card" style={{marginTop:16}}><h3>Active Remediation (per LCQ20 commitments)</h3><ul style={{paddingLeft:18,marginTop:10,fontSize:13,lineHeight:1.85}}><li>Done — Complaint Handling Task Force (CHTF) established Q4 2025; management-led</li><li>Done — Performance tracking system live, alerts on critical-process SLA risk</li><li>Done — Dedicated case officers per complaint, AI-assisted data retrieval</li><li>Done — Project team headcount up 60% to 4,200 (1,300 in customer service)</li><li>In progress — Three-tiered testing framework: pro testing plus Expert Group plus Standing User Group</li><li>In progress — UI/UX uplift: facial recognition simplified, voluntary contribution flow streamlined</li><li>In progress — Pilot Mediation Scheme (Financial Dispute Resolution Centre) for monetary disputes</li></ul></div>
+  </div>;
+}
+
+function CostSavingsTracker(){
+  const monthsElapsed=22;const totalMonths=120;
+  const savingsTarget=50;const lowBand=40;
+  const targetSavings=savingsTarget*(monthsElapsed/totalMonths);
+  const lowSavings=lowBand*(monthsElapsed/totalMonths);
+  const points=[];
+  for(let m=0;m<=monthsElapsed+24;m+=3){
+    const yr=2024+Math.floor((m+6)/12);const q=Math.floor(((m+6)%12)/3+1);
+    const lbl=yr+'-Q'+q;
+    const lo=lowBand*(m/120);const tg=savingsTarget*(m/120);
+    const actual=m<=monthsElapsed?+(tg*1.04).toFixed(2):null;
+    points.push({label:lbl,low:+lo.toFixed(2),target:+tg.toFixed(2),actual});
+  }
+  const baselineFee=580;const launchFee=370;const currentFee=290;
+  const reductionPct=Math.round((baselineFee-currentFee)/baselineFee*100);
+  const launchReductionPct=Math.round((baselineFee-launchFee)/baselineFee*100);
+  return <div>
+    <h2 className="section-title">Cost Savings and Public Value Tracker</h2>
+    <div style={{fontSize:12,color:'var(--text-secondary)',marginBottom:16}}>Tracking the revised <strong>HK$50B</strong> 10-year cumulative savings target (upgraded by MPFA/FSTB in 2025 following full onboarding and the further fee cut effective 1 Apr 2026). HK$40B retained as downside band. Sources: FSTB blog 24 Jun 2024, MPFA/FSTB 2025-26 communications.</div>
+    <div className="cost-hero">
+      <div>
+        <div><span className="num">{targetSavings.toFixed(2)}</span><span className="unit"> HK$ B</span></div>
+        <div className="lbl">Cumulative Savings (revised target basis, today)</div>
+        <div style={{fontSize:13,color:'var(--text-secondary)',marginTop:8,lineHeight:1.6}}>Per MPFA, the platform delivered ~36% admin fee reduction in Years 1-2, with a further cut to <strong>29 bps</strong> effective 1 Apr 2026, and trending toward 20-25 bps by Year 10. Revised cumulative savings target: <strong>HK$50B</strong> for ~4.75M scheme members.</div>
+      </div>
+      <div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,color:'var(--text-secondary)'}}><span><strong>HK$ {targetSavings.toFixed(1)}B</strong> on target-basis trajectory</span><span>HK$50B target by 2034</span></div>
+        <div className="pgress"><div className="fill" style={{width:Math.min(100,targetSavings/savingsTarget*100)+'%'}}/></div>
+        <div className="marks"><span>2024</span><span>Y2</span><span>Y4</span><span>Y6</span><span>Y8</span><span>2034</span></div>
+        <div style={{marginTop:14,fontSize:12.5,color:'var(--text-secondary)'}}>Downside band (HK$40B): <strong>HK$ {lowSavings.toFixed(1)}B</strong>. Months elapsed: <strong>{monthsElapsed}</strong> of 120 ({Math.round(monthsElapsed/120*100)}%).</div>
+      </div>
+    </div>
+    <div className="grid grid-3" style={{marginBottom:16}}>
+      <div className="mini-kpi green"><div className="v">~{reductionPct}%</div><div className="l">Admin Fee Reduction vs pre-eMPF baseline</div><div className="s">HK${baselineFee} → HK${launchFee} (launch, -{launchReductionPct}%) → HK${currentFee} (1 Apr 2026, 29 bps)</div></div>
+      <div className="mini-kpi"><div className="v">20-25 bps</div><div className="l">Target FER by Year 10</div><div className="s">vs ~85 bps pre-eMPF · 29 bps as of Apr 2026</div></div>
+      <div className="mini-kpi"><div className="v">HK$ 33.2B</div><div className="l">Govt SP/LSP Subsidy (25 yr)</div><div className="s">2021 prices, post-offsetting transition</div></div>
+    </div>
+    <div className="card" style={{marginBottom:16}}><h3>Cumulative Savings Trajectory</h3><ResponsiveContainer width="100%" height={300}><ComposedChart data={points}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="label" angle={-30} textAnchor="end" height={60} style={{fontSize:10}}/><YAxis style={{fontSize:10}}/><Tooltip/><Legend/><Area type="monotone" dataKey="target" stroke={COLORS[1]} fill={COLORS[1]} fillOpacity={0.15} name="HK$50B target"/><Area type="monotone" dataKey="low" stroke={COLORS[0]} fill={COLORS[0]} fillOpacity={0.08} name="HK$40B downside"/><Line type="monotone" dataKey="actual" stroke={COLORS[2]} strokeWidth={3} dot={{r:3}} name="Estimated actual"/></ComposedChart></ResponsiveContainer></div>
+    <div className="callout"><h3>Where the savings come from</h3><ul><li><strong>Standardisation</strong> — single platform replaces 12 trustee admin systems</li><li><strong>Automation</strong> — 100k plus paper transactions per day eliminated; bulk cheques retired</li><li><strong>Straight pass-on rule</strong> — under MPF legislation, every dollar of platform efficiency must flow to scheme members as fee reductions</li><li><strong>Account consolidation</strong> — members consolidate multiple personal accounts</li></ul></div>
+  </div>;
+}
+
+function DevDashboard({section}){
+  const WEEKS=(window.QA&&window.QA.WEEKS)||[];
+  const WEEK_DATES=(window.QA&&window.QA.WEEK_DATES)||{};
+  const [week,setWeek]=useState('W22');
+  const html=useMemo(()=>{
+    if(!window.QA)return '<div class="card" style="padding:var(--space-xl);color:var(--accent-danger)">QA render module not loaded.</div>';
+    return window.QA.render(section,week,'en');
+  },[section,week]);
+  const weekIdx=WEEKS.indexOf(week);
+  const label=`Week ${week.slice(1)} — ${WEEK_DATES[week]||''}`;
+  return <div className="content qa-embed">
+    <div className="qa-week-selector">
+      <button className="qa-week-nav" onClick={()=>weekIdx>0&&setWeek(WEEKS[weekIdx-1])} disabled={weekIdx<=0}>◀</button>
+      <div className="qa-week-label">{label}</div>
+      <button className="qa-week-nav" onClick={()=>weekIdx<WEEKS.length-1&&setWeek(WEEKS[weekIdx+1])} disabled={weekIdx>=WEEKS.length-1}>▶</button>
+      <div className="qa-week-pills">
+        {WEEKS.map(w=><button key={w} className={`qa-week-pill ${w===week?'active':''}`} onClick={()=>setWeek(w)}>{w}</button>)}
+      </div>
+    </div>
+    <div dangerouslySetInnerHTML={{__html:html}}/>
+  </div>;
+}
+
+function App(){
+  const [theme,setTheme]=useState('light');const [collapsed,setCollapsed]=useState(false);const [page,setPage]=useState('mc');
+  const [openGroups,setOpenGroups]=useState({exec:true,ops:false,dev:false,inc:false,agile:false,itsm:false});
+  useEffect(()=>{document.documentElement.setAttribute('data-theme',theme);},[theme]);
+  const menu=[
+    {g:'Executive Cockpit',gk:'exec',items:[
+      {k:'mc',l:'Mission Control',ic:'🎯'},
+      {k:'trustee',l:'Trustee & Scheme Scorecard',ic:'🏦'},
+      {k:'pledge',l:'Service Pledge Performance',ic:'📋'},
+      {k:'service_q',l:'Service Quality & Complaints',ic:'📞'},
+      {k:'savings',l:'Cost Savings & Public Value',ic:'💰'},
+    ]},
+    {g:'Operations Dashboard',gk:'ops',items:[
+      {k:'biz_exec',l:'Operations Overview',ic:'📊'},
+      {k:'biz_contrib',l:'Contribution & Payment',ic:'💸'},
+      {k:'biz_member',l:'Enrolment & Members',ic:'👥'},
+      {k:'biz_invest',l:'Investment & Funds',ic:'💼'},
+      {k:'biz_claims',l:'Claims & Withdrawals',ic:'📋'},
+      {k:'biz_compliance',l:'Compliance & Risk',ic:'⚖️'},
+    ]},
+    {g:'Development Dashboard',gk:'dev',items:[
+      {k:'dev_0',l:'Dashboard',ic:'📊'},
+      {k:'dev_1',l:'Functional Testing — SIT',ic:'📋'},
+      {k:'dev_2',l:'Data Migration',ic:'📦'},
+      {k:'dev_3',l:'Performance Testing',ic:'⚡'},
+      {k:'dev_4',l:'Security Testing',ic:'🔒'},
+      {k:'dev_5',l:'Regression & Automation',ic:'🔄'},
+      {k:'dev_6',l:'UAT',ic:'✅'},
+      {k:'dev_7',l:'DR / Business Continuity',ic:'🛡️'},
+      {k:'dev_8',l:'Compliance',ic:'📜'},
+      {k:'dev_9',l:'Go-Live Readiness',ic:'🚀'},
+      {k:'dev_10',l:'Trustee Onboarding Status',ic:'🏦'},
+    ]},
+    {g:'Incident Dashboard',gk:'inc',items:[
+      {k:'health',l:'Project Health',ic:'🎯'},
+      {k:'module',l:'Module QA Report',ic:'🧩'},
+      {k:'analytics',l:'I&P Analytics',ic:'📊'},
+      {k:'qa_dash',l:'Bug Fix & Retest',ic:'📈'},
+    ]},
+    {g:'Agile QA',gk:'agile',items:[
+      {k:'bug_kanban',l:'Bug Kanban',ic:'🐞'},
+      {k:'tc_kanban',l:'Test Case Kanban',ic:'✅'},
+    ]},
+    {g:'ITSM Console',gk:'itsm',items:[
+      {k:'incidents',l:'Incidents',ic:'⚠️'},
+      {k:'problems',l:'Problems',ic:'📋'},
+      {k:'kb',l:'Knowledge Base',ic:'📚'},
+      {k:'bugs',l:'Bugs',ic:'🐛'},
+      {k:'tc',l:'Test Cases',ic:'🧪'},
+    ]},
+  ];
+  const toggleGroup=k=>setOpenGroups(o=>({...o,[k]:!o[k]}));
+  const isDev=page&&page.startsWith('dev_');
+  const devSection=isDev?parseInt(page.slice(4)):0;
+  return <div className="app">
+    <aside className={`sidebar ${collapsed?'collapsed':''}`}>
+      <div className="sidebar-header"><img className="logo" src="https://et-dao.com/logo_d2_sm.png" alt="ET-DAO"/><button className="sidebar-toggle" onClick={()=>setCollapsed(c=>!c)}>{collapsed?'»':'«'}</button></div>
+      <nav className="sidebar-nav">{menu.map(g=><div key={g.g}>
+        <div className={`nav-group-label ${openGroups[g.gk]?'':'collapsed'}`} onClick={()=>toggleGroup(g.gk)}><span>{g.g}</span><span className="caret">▼</span></div>
+        <div className={`nav-group-items ${openGroups[g.gk]?'':'collapsed'}`} style={{maxHeight:openGroups[g.gk]?'500px':'0'}}>{g.items.map(i=><div key={i.k} className={`nav-item ${page===i.k?'active':''}`} onClick={()=>setPage(i.k)}><span className="icon">{i.ic}</span><span className="label">{i.l}</span></div>)}</div>
+      </div>)}</nav>
+    </aside>
+    <main className="main">
+      <header className="topbar"><div className="brand">eMPF · Executive Dashboard v8.3</div><button className="theme-toggle" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme==='light'?'🌙':'☀️'}</button></header>
+      {isDev&&<DevDashboard section={devSection}/>}
+      {!isDev&&<div className="content">
+        {page==='mc'&&<MissionControl/>}
+        {page==='trustee'&&<TrusteeScorecard/>}
+        {page==='pledge'&&<ServicePledgePerformance/>}
+        {page==='service_q'&&<ServiceQualityComplaints/>}
+        {page==='savings'&&<CostSavingsTracker/>}
+        {page==='biz_exec'&&<BizExecDashboard/>}
+        {page==='biz_contrib'&&<BizContributionPage/>}
+        {page==='biz_member'&&<BizMemberPage/>}
+        {page==='biz_invest'&&<BizInvestmentPage/>}
+        {page==='biz_claims'&&<BizClaimsPage/>}
+        {page==='biz_compliance'&&<BizCompliancePage/>}
+        {page==='health'&&<ProjectHealthDashboard/>}
+        {page==='module'&&<ModuleQAReport/>}
+        {page==='analytics'&&<IPAnalytics/>}
+        {page==='qa_dash'&&<BugRetestDashboard/>}
+        {page==='bug_kanban'&&<BugKanban/>}
+        {page==='tc_kanban'&&<TCKanban/>}
+        {page==='incidents'&&<IncidentsView/>}
+        {page==='problems'&&<ProblemsView/>}
+        {page==='kb'&&<KBView/>}
+        {page==='bugs'&&<BugsView/>}
+        {page==='tc'&&<TestCasesView/>}
+      </div>}
+    </main>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>
