@@ -7,10 +7,11 @@ Deep research (MBB method) on 2026 AI-agent cyber-intrusions and a defense archi
 | File | What it is |
 |---|---|
 | `dashboard_ai_attack_defense.html` | Bilingual (EN/中文) ET-DAO dashboard — the full MBB analysis. Open in any browser; theme + language toggles top-right. Needs internet for React/logo CDNs. |
-| `AI_Defense_Architecture_Option_A_EN.pptx` | Architecture **Option A — SOC-Evolved** (English) |
-| `AI_Defense_Architecture_Option_A_ZH.pptx` | Architecture **Option A — SOC 演进式** (中文) |
-| `AI_Defense_Architecture_Option_B_EN.pptx` | Architecture **Option B — AI-Native Defense Mesh** (English) |
-| `AI_Defense_Architecture_Option_B_ZH.pptx` | Architecture **Option B — AI 原生防御网格** (中文) |
+| `AI_Attack_Defense_ALL_EN_ZH.pptx` | **Combined deck — all 58 slides in one file**: cover + contents + all four parts (Option A & B, each EN and 中文), organised as PowerPoint sections. |
+| `AI_Defense_Architecture_Option_A_EN.pptx` | Architecture **Option A — SOC-Evolved** (English) — standalone |
+| `AI_Defense_Architecture_Option_A_ZH.pptx` | Architecture **Option A — SOC 演进式** (中文) — standalone |
+| `AI_Defense_Architecture_Option_B_EN.pptx` | Architecture **Option B — AI-Native Defense Mesh** (English) — standalone |
+| `AI_Defense_Architecture_Option_B_ZH.pptx` | Architecture **Option B — AI 原生防御网格** (中文) — standalone |
 | `research/research_dossier.md` | Full narrative research report (EN + 中文 summaries) |
 | `research/research_data.json` | Structured, fully bilingual dataset behind the dashboard and decks |
 | `research/src/` | Generators (data + dashboard + decks) — re-run to rebuild |
