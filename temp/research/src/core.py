@@ -10,8 +10,8 @@ META = {
     "date": "2026-09-25",
     "method": T("MBB method: SMART problem statement → MECE issue tree → Day-1 hypotheses → triangulated evidence (≥2 sources for critical claims) → Pyramid/SCQA synthesis.",
                 "MBB方法：SMART问题定义 → MECE议题树 → 第一天假设 → 多源交叉验证（关键结论≥2个独立来源）→ 金字塔/SCQA综合。"),
-    "evidence_note": T("Evidence caveat: the research environment's egress proxy blocked direct page fetches, so findings rest on search-engine summaries of the cited sources, triangulated across independent outlets. Figures are labelled with confidence levels; items marked 'not disclosed' are not in the public record.",
-                       "证据说明：研究环境的出网代理屏蔽了网页直接抓取，因此结论基于所引来源的搜索摘要，并经多个独立媒体交叉验证。数据均标注置信度；标记为“未披露”的内容在公开资料中不存在。"),
+    "evidence_note": T("The research environment's egress proxy blocked direct page fetches, so findings rest on search-engine summaries of the cited sources, triangulated across independent outlets. Figures are labelled with confidence levels; items marked 'not disclosed' are not in the public record.",
+                       "研究环境的出网代理屏蔽了网页直接抓取，因此结论基于所引来源的搜索摘要，并经多个独立媒体交叉验证。数据均标注置信度；标记为“未披露”的内容在公开资料中不存在。"),
     "problem_statement": T("Using public reporting from January to 25 September 2026, explain how AI-agent intrusions evolved, what their victims share, how Hugging Face detected, analysed and contained the July 2026 intrusion with GLM, and specify two alternative AI-defense architectures (with models, analyses and prompts) that an organisation can start implementing within 90 days.",
                            "基于2026年1月至9月25日的公开报道：解释AI智能体入侵如何演进、受害方有哪些共性、Hugging Face如何借助GLM检测、分析并遏制2026年7月的入侵，并给出两套可在90天内启动实施的AI防御备选架构（含模型、分析项与提示词）。"),
 }

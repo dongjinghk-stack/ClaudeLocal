@@ -4,9 +4,9 @@
 
 _Date: 2026-09-25 · Prepared with the MBB methodology. MBB method: SMART problem statement → MECE issue tree → Day-1 hypotheses → triangulated evidence (≥2 sources for critical claims) → Pyramid/SCQA synthesis._
 
-> **Evidence caveat.** Evidence caveat: the research environment's egress proxy blocked direct page fetches, so findings rest on search-engine summaries of the cited sources, triangulated across independent outlets. Figures are labelled with confidence levels; items marked 'not disclosed' are not in the public record.
+> **Evidence caveat.** The research environment's egress proxy blocked direct page fetches, so findings rest on search-engine summaries of the cited sources, triangulated across independent outlets. Figures are labelled with confidence levels; items marked 'not disclosed' are not in the public record.
 
-> **中文摘要.** 证据说明：研究环境的出网代理屏蔽了网页直接抓取，因此结论基于所引来源的搜索摘要，并经多个独立媒体交叉验证。数据均标注置信度；标记为“未披露”的内容在公开资料中不存在。
+> **中文摘要.** 研究环境的出网代理屏蔽了网页直接抓取，因此结论基于所引来源的搜索摘要，并经多个独立媒体交叉验证。数据均标注置信度；标记为“未披露”的内容在公开资料中不存在。
 
 
 ## 0. Problem statement
